@@ -17,16 +17,27 @@ contract MockUSDC is ERC20 {
 
 contract RecurringRentTest is Test {
     RecurringRent public rental;
-    MockUSDC public usdc;
+    IERC20 public usdc;
     address public landlord = address(0x1);
     address public tenant = address(0x2);
     uint256 public monthlyAmount = 1000 * 10**6; // 1000 USDC
     uint8 public totalMonths = 6;
 
+    // Base USDC address (same as RecurringRent contract)
+    address constant BASE_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+
     function setUp() public {
-        usdc = new MockUSDC();
+        // Deploy MockUSDC and set it at the hardcoded USDC address
+        MockUSDC mockToken = new MockUSDC();
+        vm.etch(BASE_USDC, address(mockToken).code);
+        usdc = IERC20(BASE_USDC);
+
+        // Give this test contract tokens at the BASE_USDC address
+        deal(BASE_USDC, address(this), 1000000 * 10**6);
+
+        // Deploy and initialize RecurringRent
         rental = new RecurringRent();
-        rental.initialize(landlord, tenant, monthlyAmount, totalMonths, address(usdc));
+        rental.initialize(landlord, tenant, monthlyAmount, totalMonths);
     }
 
     function testInitialization() public {
