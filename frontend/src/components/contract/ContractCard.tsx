@@ -1,7 +1,10 @@
 'use client';
 
 import type { RentalConfig } from '@/lib/ai/schemas';
-import { formatUnits } from 'viem';
+import TornPaperCard from '@/components/ui/TornPaperCard';
+import TactileButton from '@/components/ui/TactileButton';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { CheckCircle2 } from 'lucide-react';
 
 interface ContractCardProps {
   config: Partial<RentalConfig>;
@@ -13,32 +16,41 @@ export function ContractCard({ config, isComplete }: ContractCardProps) {
     ? config.monthlyAmount * config.totalMonths
     : 0;
 
+  // Generate receipt ID (last 8 chars of a mock address for display)
+  const receiptId = 'XXXXXXXX'.substring(0, 8);
+
   return (
-    <div className="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-zinc-900">Rental Agreement</h3>
-        <p className="text-sm text-zinc-500 mt-1">
-          {isComplete ? 'Ready to deploy' : 'Configure details via chat'}
-        </p>
+    <TornPaperCard className="animate-receipt-print">
+      {/* Receipt Header */}
+      <div className="mb-6 text-center">
+        <h2 className="font-headline text-3xl uppercase mb-2">RECEIPT</h2>
+        <p className="font-display text-xs opacity-60">ID: {receiptId}</p>
+        <div className="mt-3 flex justify-center">
+          <StatusBadge status={isComplete ? 'ready' : 'incomplete'} size="sm" />
+        </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Dashed Divider */}
+      <div className="border-t-2 border-dashed border-black mb-6" />
+
+      {/* Details Section */}
+      <div className="space-y-4 mb-6">
         {/* Tenant */}
-        <div>
-          <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+        <div className="flex justify-between items-start">
+          <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">
             Tenant
           </label>
-          <p className="mt-1 text-sm text-zinc-900 font-mono">
+          <p className="text-sm font-bold text-black font-mono text-right max-w-[60%] break-all">
             {config.tenant || '—'}
           </p>
         </div>
 
         {/* Monthly Amount */}
-        <div>
-          <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+        <div className="flex justify-between items-center">
+          <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">
             Monthly Amount
           </label>
-          <p className="mt-1 text-sm text-zinc-900">
+          <p className="text-sm font-bold text-black">
             {config.monthlyAmount
               ? `${config.monthlyAmount.toLocaleString()} USDC`
               : '—'}
@@ -46,44 +58,67 @@ export function ContractCard({ config, isComplete }: ContractCardProps) {
         </div>
 
         {/* Duration */}
-        <div>
-          <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+        <div className="flex justify-between items-center">
+          <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">
             Duration
           </label>
-          <p className="mt-1 text-sm text-zinc-900">
+          <p className="text-sm font-bold text-black">
             {config.totalMonths
               ? `${config.totalMonths} month${config.totalMonths > 1 ? 's' : ''}`
               : '—'}
           </p>
         </div>
+      </div>
 
-        {/* Total Amount */}
-        <div className="pt-4 border-t border-zinc-200">
-          <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
-            Total Amount
-          </label>
-          <p className="mt-1 text-lg font-semibold text-zinc-900">
-            {totalAmount > 0 ? `${totalAmount.toLocaleString()} USDC` : '—'}
-          </p>
+      {/* Dashed Divider */}
+      <div className="border-t-2 border-dashed border-black mb-6" />
+
+      {/* Total Amount Highlight */}
+      <div className="border-y-[3px] border-black bg-gray-50 -mx-8 px-8 py-4 mb-6">
+        <div className="flex justify-between items-center">
+          <span className="font-headline text-lg uppercase">TOTAL</span>
+          <div className="bg-black px-3 py-1 inline-block">
+            <span className="text-hot-pink font-headline text-2xl">
+              {totalAmount > 0 ? `${totalAmount.toLocaleString()}` : '—'}
+            </span>
+            <span className="text-white font-headline text-sm ml-2">USDC</span>
+          </div>
         </div>
       </div>
 
-      {/* Deploy Button */}
+      {/* Barcode */}
+      <div className="mb-6 opacity-70">
+        <svg width="100%" height="8" viewBox="0 0 200 8">
+          {[...Array(40)].map((_, i) => (
+            <rect
+              key={i}
+              x={i * 5}
+              y="0"
+              width={i % 3 === 0 ? '3' : '2'}
+              height="8"
+              fill="black"
+            />
+          ))}
+        </svg>
+      </div>
+
+      {/* Action Button */}
       {isComplete && (
-        <button
-          className="mt-6 w-full px-4 py-3 bg-zinc-900 text-white rounded-lg font-medium hover:bg-zinc-800 transition-colors"
-        >
-          Sign & Fund
-        </button>
+        <TactileButton variant="secondary" className="w-full">
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-5 h-5" />
+            <span>DEPLOY CONTRACT</span>
+          </div>
+        </TactileButton>
       )}
 
       {!isComplete && (
-        <div className="mt-6 p-3 bg-zinc-50 border border-zinc-200 rounded-lg">
-          <p className="text-xs text-zinc-600 text-center">
-            Complete all fields to deploy your agreement
+        <div className="p-4 bg-gray-100 border-[2px] border-black text-center">
+          <p className="text-xs font-bold text-gray-600 uppercase">
+            Complete all fields to deploy
           </p>
         </div>
       )}
-    </div>
+    </TornPaperCard>
   );
 }

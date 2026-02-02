@@ -6,10 +6,12 @@ import { Brain, Zap, Link2 } from 'lucide-react';
 import TactileButton from '@/components/ui/TactileButton';
 import HardShadowCard from '@/components/ui/HardShadowCard';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
+import { VideoSplashScreen } from '@/components/splash/VideoSplashScreen';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-paper-cream flex flex-col">
+    <VideoSplashScreen>
+      <div className="min-h-screen bg-paper-cream flex flex-col">
       {/* Marquee Ticker */}
       <MarqueeTicker />
 
@@ -120,5 +122,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </VideoSplashScreen>
   );
 }
