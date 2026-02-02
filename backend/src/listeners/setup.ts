@@ -4,52 +4,62 @@ import { env } from '@/config/environment'
 import { handleContractDeployed } from './handlers/contractDeployed'
 import { logger } from '@/utils/logger'
 
-const MAX_RETRIES = 5
-const RETRY_DELAY = 5000 // 5 seconds
+const POLL_INTERVAL_MS = 10_000
+const LOOKBACK_BLOCKS = 2n
 
 /**
- * Start factory event listener with automatic reconnection on failure
+ * Start factory event listener using log polling.
+ * This avoids RPC "filter not found" errors on public HTTP endpoints.
  */
-function startFactoryListener(retries = 0) {
+async function startFactoryListener() {
   try {
-    const unwatch = publicClient.watchContractEvent({
-      address: env.FACTORY_ADDRESS,
-      abi: RENTAL_FACTORY_ABI,
-      eventName: 'RentalDeployed',
-      onLogs: (logs) => {
-        logs.forEach((log) => {
-          handleContractDeployed(log).catch((error) => {
-            logger.error('Error handling RentalDeployed event', {
-              error,
-              log,
-            })
-          })
-        })
-      },
-      onError: (error) => {
-        logger.error('Event listener error - RentalDeployed', {
-          error,
-          retries,
-        })
+    let lastProcessedBlock = await publicClient.getBlockNumber()
 
-        // Attempt reconnection with exponential backoff
-        if (retries < MAX_RETRIES) {
-          const delay = RETRY_DELAY * Math.pow(2, retries) // Exponential backoff
-          setTimeout(() => {
-            logger.info(`Reconnecting listener`, {
-              attempt: retries + 1,
-              maxRetries: MAX_RETRIES,
-            })
-            unwatch() // Clean up old listener
-            startFactoryListener(retries + 1)
-          }, delay)
-        } else {
-          logger.error('Max retries reached, listener stopped permanently')
-        }
-      },
+    if (lastProcessedBlock > LOOKBACK_BLOCKS) {
+      lastProcessedBlock -= LOOKBACK_BLOCKS
+    }
+
+    logger.info('Factory event listener started (polling)', {
+      fromBlock: lastProcessedBlock,
     })
 
-    logger.info('Factory event listener started successfully')
+    setInterval(async () => {
+      try {
+        const latestBlock = await publicClient.getBlockNumber()
+
+        if (latestBlock <= lastProcessedBlock) {
+          return
+        }
+
+        const fromBlock = lastProcessedBlock + 1n
+        const toBlock = latestBlock
+
+        const logs = await publicClient.getLogs({
+          address: env.FACTORY_ADDRESS,
+          abi: RENTAL_FACTORY_ABI,
+          eventName: 'RentalDeployed',
+          fromBlock,
+          toBlock,
+        })
+
+        if (logs.length > 0) {
+          await Promise.allSettled(
+            logs.map((log) =>
+              handleContractDeployed(log).catch((error) => {
+                logger.error('Error handling RentalDeployed event', {
+                  error,
+                  log,
+                })
+              })
+            )
+          )
+        }
+
+        lastProcessedBlock = latestBlock
+      } catch (error) {
+        logger.error('Event listener poll error - RentalDeployed', { error })
+      }
+    }, POLL_INTERVAL_MS)
   } catch (error) {
     logger.error('Failed to initialize event listener', { error })
     throw error // Fail fast on startup

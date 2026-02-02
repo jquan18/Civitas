@@ -2,8 +2,6 @@ import { createServiceClient } from './server'
 import type { Database } from './types'
 
 type User = Database['public']['Tables']['users']['Row']
-type UserInsert = Database['public']['Tables']['users']['Insert']
-type UserUpdate = Database['public']['Tables']['users']['Update']
 
 /**
  * Get or create user by wallet address
