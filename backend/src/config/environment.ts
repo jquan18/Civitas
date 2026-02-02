@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config()
+// Load .env from repository root (parent of backend directory)
+dotenv.config({ path: path.join(__dirname, '../../..', '.env') })
 
 interface Environment {
   NODE_ENV: string
