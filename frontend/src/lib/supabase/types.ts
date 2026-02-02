@@ -186,6 +186,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["wallet_address"]
           },
+          {
+            foreignKeyName: "fk_tenant"
+            columns: ["tenant_address"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["wallet_address"]
+          },
         ]
       }
       user_contracts: {
@@ -204,7 +211,7 @@ export type Database = {
           user_address: string
         }
         Update: {
-          contract_address?: string
+          contract_address?: string | null
           created_at?: string | null
           id?: string
           role?: string
@@ -222,6 +229,56 @@ export type Database = {
             foreignKeyName: "fk_user"
             columns: ["user_address"]
             isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["wallet_address"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          address_display: string | null
+          created_at: string | null
+          currency_display: string | null
+          date_format: string | null
+          id: string
+          network_mode: string
+          notification_preferences: Json | null
+          rpc_base_url: string | null
+          rpc_ethereum_url: string | null
+          updated_at: string | null
+          user_address: string
+        }
+        Insert: {
+          address_display?: string | null
+          created_at?: string | null
+          currency_display?: string | null
+          date_format?: string | null
+          id?: string
+          network_mode?: string
+          notification_preferences?: Json | null
+          rpc_base_url?: string | null
+          rpc_ethereum_url?: string | null
+          updated_at?: string | null
+          user_address: string
+        }
+        Update: {
+          address_display?: string | null
+          created_at?: string | null
+          currency_display?: string | null
+          date_format?: string | null
+          id?: string
+          network_mode?: string
+          notification_preferences?: Json | null
+          rpc_base_url?: string | null
+          rpc_ethereum_url?: string | null
+          updated_at?: string | null
+          user_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_address_fkey"
+            columns: ["user_address"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["wallet_address"]
           },

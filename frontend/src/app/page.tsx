@@ -1,23 +1,36 @@
 'use client';
 
+import { useAccount } from 'wagmi';
 import Link from 'next/link';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Brain, Zap, Link2 } from 'lucide-react';
 import TactileButton from '@/components/ui/TactileButton';
 import HardShadowCard from '@/components/ui/HardShadowCard';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
 import { VideoSplashScreen } from '@/components/splash/VideoSplashScreen';
+import { NeoBrutalistConnectButton } from '@/components/wallet/NeoBrutalistConnectButton';
 
 export default function Home() {
+  const { isConnected } = useAccount();
+
   return (
     <VideoSplashScreen>
-      <div className="min-h-screen bg-paper-cream flex flex-col">
+      <div className="min-h-screen bg-paper-cream flex flex-col relative">
       {/* Marquee Ticker */}
       <MarqueeTicker />
 
-      {/* Connect Button - Top Right */}
-      <div className="absolute top-6 right-6 z-50">
-        <ConnectButton />
+      {/* Top Right Section - Connect Button or Warning */}
+      <div className="absolute top-[60px] right-6 z-40">
+        {!isConnected && (
+          <div className="bg-warning-yellow border-4 border-black shadow-[8px_8px_0px_#000] p-4 mb-3 max-w-xs">
+            <p className="font-display font-bold text-xs uppercase text-center mb-2">
+              ⚠️ Wallet Required
+            </p>
+            <p className="font-display text-xs text-center mb-3">
+              Connect to unlock features
+            </p>
+          </div>
+        )}
+        <NeoBrutalistConnectButton />
       </div>
 
       {/* Hero Section */}
@@ -37,16 +50,40 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-            <Link href="/create">
-              <TactileButton variant="primary" className="text-xl px-10 py-5">
-                Create Agreement
-              </TactileButton>
-            </Link>
-            <Link href="/dashboard">
-              <TactileButton variant="outline" className="text-xl px-10 py-5">
-                View Dashboard
-              </TactileButton>
-            </Link>
+            {isConnected ? (
+              <>
+                <Link href="/create">
+                  <TactileButton variant="primary" className="text-xl px-10 py-5">
+                    Create Agreement
+                  </TactileButton>
+                </Link>
+                <Link href="/dashboard">
+                  <TactileButton variant="outline" className="text-xl px-10 py-5">
+                    View Dashboard
+                  </TactileButton>
+                </Link>
+              </>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-6">
+                {/* Disabled Buttons with Lock Icon */}
+                <button
+                  disabled
+                  className="bg-gray-300 text-gray-500 border-[3px] border-gray-400 text-xl px-10 py-5 font-display font-black uppercase shadow-[4px_4px_0px_rgba(0,0,0,0.2)] cursor-not-allowed"
+                >
+                  <span className="flex items-center gap-2">
+                    🔒 Create Agreement
+                  </span>
+                </button>
+                <button
+                  disabled
+                  className="bg-gray-300 text-gray-500 border-[3px] border-gray-400 text-xl px-10 py-5 font-display font-black uppercase shadow-[4px_4px_0px_rgba(0,0,0,0.2)] cursor-not-allowed"
+                >
+                  <span className="flex items-center gap-2">
+                    🔒 View Dashboard
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Features Grid */}

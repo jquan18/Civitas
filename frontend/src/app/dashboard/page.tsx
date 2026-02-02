@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { WalletGate } from '@/components/wallet/WalletGate';
 import { fetchUserContracts, type RentalContract } from '@/lib/contracts/fetch-contracts';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
 import CommandZone from '@/components/dashboard/CommandZone';
 import ExecutionZone from '@/components/dashboard/ExecutionZone';
-import { useEffect } from 'react';
 
 export default function DashboardPage() {
   const [contracts, setContracts] = useState<RentalContract[]>([]);
@@ -33,28 +33,33 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-paper-cream flex h-screen overflow-hidden">
-      {/* Navigation Rail */}
-      <NavigationRail />
+    <WalletGate
+      fallbackTitle="Connect to View Dashboard"
+      fallbackMessage="Connect your wallet to view and manage your rental agreements"
+    >
+      <div className="min-h-screen bg-paper-cream h-screen overflow-hidden relative">
+        {/* Navigation Rail */}
+        <NavigationRail />
 
-      {/* Main Content Area */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden ml-[88px]">
-        {/* Marquee Ticker */}
-        <MarqueeTicker />
+        {/* Main Content Area */}
+        <div className="flex flex-col h-full overflow-hidden ml-[88px]">
+          {/* Marquee Ticker */}
+          <MarqueeTicker />
 
-        {/* Three-Zone Layout */}
-        <div className="flex-grow flex flex-col md:flex-row h-full overflow-hidden">
-          {/* Command Zone */}
-          <CommandZone
-            contracts={contracts}
-            onSelectContract={setSelectedContract}
-            selectedContract={selectedContract}
-          />
+          {/* Three-Zone Layout */}
+          <div className="flex-grow flex flex-col md:flex-row h-full overflow-hidden">
+            {/* Command Zone */}
+            <CommandZone
+              contracts={contracts}
+              onSelectContract={setSelectedContract}
+              selectedContract={selectedContract}
+            />
 
-          {/* Execution Zone */}
-          <ExecutionZone contract={selectedContract} />
+            {/* Execution Zone */}
+            <ExecutionZone contract={selectedContract} />
+          </div>
         </div>
       </div>
-    </div>
+    </WalletGate>
   );
 }

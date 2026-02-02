@@ -24,9 +24,11 @@ export default function NavigationRail() {
   return (
     <aside className="w-[88px] bg-void-black flex flex-col items-center py-6 gap-8 border-r-4 border-black shrink-0 z-50 h-full fixed left-0 top-0">
       {/* Logo */}
-      <div className="w-12 h-12 bg-hot-pink border-2 border-white flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] shrink-0">
-        <span className="font-headline text-white text-2xl">C</span>
-      </div>
+      <Link href="/" aria-label="Home">
+        <div className="w-12 h-12 bg-hot-pink border-2 border-white flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] shrink-0 cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95">
+          <span className="font-headline text-white text-2xl">C</span>
+        </div>
+      </Link>
 
       {/* Navigation Icons */}
       <nav className="flex flex-col gap-8 w-full items-center mt-4 flex-grow">

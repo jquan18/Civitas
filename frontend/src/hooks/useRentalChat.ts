@@ -48,8 +48,8 @@ export function useRentalChat() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
+  const handleInputChange = (value: string) => {
+    setInput(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -1,7 +1,7 @@
 'use client';
 
 export default function MarqueeTicker() {
-  const statusText = 'GAS: 15 GWEI // AGENT STATUS: ACTIVE // BRIDGE SECURED // LI.FI ROUTE OPTIMIZED // ';
+  const statusText = 'ENS DOMAIN: ACTIVE // AGENT STATUS: ACTIVE // BRIDGE SECURED // LI.FI ROUTE OPTIMIZED // ';
 
   return (
     <div className="bg-warning-yellow border-b-4 border-black py-2 overflow-hidden whitespace-nowrap shrink-0 z-40">
