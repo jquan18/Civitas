@@ -29,7 +29,7 @@ export interface RentalContract {
  */
 export async function fetchUserContracts(
   userAddress: `0x${string}`,
-  chainId: number = base.id
+  chainId: number = baseSepolia.id // ✅ Default to testnet
 ): Promise<RentalContract[]> {
   const chain = chainId === baseSepolia.id ? baseSepolia : base;
 
@@ -130,7 +130,7 @@ export async function fetchUserContracts(
  */
 export async function fetchContract(
   contractAddress: `0x${string}`,
-  chainId: number = base.id
+  chainId: number = baseSepolia.id // ✅ Default to testnet
 ): Promise<RentalContract> {
   const chain = chainId === baseSepolia.id ? baseSepolia : base;
 
