@@ -4,8 +4,12 @@ import { FACTORY_ADDRESS } from '@/lib/contracts/constants';
 import { RENTAL_FACTORY_ABI } from '@/lib/contracts/abis';
 import { predictRentalAddress } from '@/lib/contracts/predict-address';
 import type { RentalConfig } from '@/lib/ai/schemas';
-import { createContract } from '@/lib/supabase/contracts';
-import { createUserContractRelation, getOrCreateUser } from '@/lib/supabase/users';
+import {
+  persistPendingDeployment,
+  clearPendingDeployment,
+  storeContractInDatabase,
+  type PendingDeployment,
+} from '@/lib/contracts/recovery';
 
 export function useContractDeploy() {
   const { address } = useAccount();
@@ -69,13 +73,28 @@ export function useContractDeploy() {
     }
 
     // Store config for post-deployment database write
-    setLastDeployedConfig({
+    const deployConfig = {
       landlord,
       tenant,
       monthlyAmount,
       totalMonths,
       basename: nameToUse,
-    });
+    };
+
+    setLastDeployedConfig(deployConfig);
+
+    // 🔥 NEW: Persist to localStorage BEFORE deploying (for recovery)
+    const pendingDeployment: PendingDeployment = {
+      landlord,
+      tenant,
+      monthlyAmount: monthlyAmount.toString(), // BigInt to string for localStorage
+      totalMonths,
+      basename: nameToUse,
+      timestamp: Date.now(),
+    };
+
+    persistPendingDeployment(pendingDeployment);
+    console.log('💾 Persisted pending deployment to localStorage');
 
     writeContract({
       address: FACTORY_ADDRESS,
@@ -92,44 +111,42 @@ export function useContractDeploy() {
     if (isSuccess && predictedAddress && lastDeployedConfig) {
       const createDatabaseRecord = async () => {
         try {
-          // 1. Ensure landlord user exists
-          await getOrCreateUser(lastDeployedConfig.landlord);
+          console.log('✅ Deployment confirmed! Storing in database...');
 
-          // 2. Ensure tenant user exists if address is set
-          if (lastDeployedConfig.tenant !== '0x0000000000000000000000000000000000000000') {
-            await getOrCreateUser(lastDeployedConfig.tenant);
-          }
-
-          // 3. Create contract record in Supabase
-          await createContract({
-            contract_address: predictedAddress,
-            landlord_address: lastDeployedConfig.landlord,
-            tenant_address: lastDeployedConfig.tenant !== '0x0000000000000000000000000000000000000000'
-              ? lastDeployedConfig.tenant
-              : null,
+          // 🔥 UPDATED: Use new API endpoint instead of direct Supabase calls
+          const pendingDeployment: PendingDeployment = {
+            landlord: lastDeployedConfig.landlord,
+            tenant: lastDeployedConfig.tenant,
+            monthlyAmount: lastDeployedConfig.monthlyAmount.toString(),
+            totalMonths: lastDeployedConfig.totalMonths,
             basename: lastDeployedConfig.basename,
-            monthly_amount: Number(lastDeployedConfig.monthlyAmount),
-            total_months: lastDeployedConfig.totalMonths,
-            state: 0, // Deployed state
-          });
+            timestamp: Date.now(),
+            txHash: hash,
+          };
 
-          // 4. Create user-contract relationships
-          await createUserContractRelation(lastDeployedConfig.landlord, predictedAddress, 'landlord');
-          if (lastDeployedConfig.tenant !== '0x0000000000000000000000000000000000000000') {
-            await createUserContractRelation(lastDeployedConfig.tenant, predictedAddress, 'tenant');
+          const success = await storeContractInDatabase(
+            predictedAddress,
+            pendingDeployment
+          );
+
+          if (success) {
+            // 🔥 NEW: Clear localStorage on successful storage
+            clearPendingDeployment();
+            console.log('✅ Contract stored and localStorage cleared');
+          } else {
+            console.warn('⚠️ Failed to store contract, but will retry on next app load');
+            // Keep in localStorage for recovery
           }
-
-          console.log('Contract record created in Supabase:', predictedAddress);
         } catch (error) {
-          console.error('Failed to create contract record in Supabase:', error);
-          // Don't fail deployment if database write fails
+          console.error('Failed to create contract record:', error);
+          // Don't clear localStorage - let recovery handle it
           // Blockchain is source of truth; database can be re-synced later
         }
       };
 
       createDatabaseRecord();
     }
-  }, [isSuccess, predictedAddress, lastDeployedConfig]);
+  }, [isSuccess, predictedAddress, lastDeployedConfig, hash]);
 
   return {
     generateName,

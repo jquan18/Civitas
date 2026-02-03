@@ -1,28 +1,71 @@
 import { base, baseSepolia } from 'wagmi/chains';
 
-// Chain configuration
+// ============================================================================
+// Chain Configuration
+// ============================================================================
+
 export const SUPPORTED_CHAINS = [base, baseSepolia] as const;
+export const DEFAULT_CHAIN = baseSepolia; // Using testnet as default
 
-export const DEFAULT_CHAIN = base;
+// ============================================================================
+// CivitasFactory Addresses (Base Sepolia Deployment)
+// ============================================================================
 
-// Base USDC address (same across mainnet and testnet)
-export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const;
+export const CIVITAS_FACTORY_ADDRESS: Record<number, `0x${string}`> = {
+  [baseSepolia.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56',
+  [base.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56', // TODO: Update when deployed to mainnet
+};
+
+export const RENT_VAULT_IMPL: Record<number, `0x${string}`> = {
+  [baseSepolia.id]: '0x98EB94D9948c9CedeCeaB4e3E4aDEbb199F9faf7',
+  [base.id]: '0x98EB94D9948c9CedeCeaB4e3E4aDEbb199F9faf7', // TODO: Update when deployed to mainnet
+};
+
+export const GROUP_BUY_ESCROW_IMPL: Record<number, `0x${string}`> = {
+  [baseSepolia.id]: '0x43066b4557cCfa5a25f77f151a871Dd591C0f2F5',
+  [base.id]: '0x43066b4557cCfa5a25f77f151a871Dd591C0f2F5', // TODO: Update when deployed to mainnet
+};
+
+export const STABLE_ALLOWANCE_TREASURY_IMPL: Record<number, `0x${string}`> = {
+  [baseSepolia.id]: '0x86CCC5d79bF369FC38d2210138007b66D4Dd8433',
+  [base.id]: '0x86CCC5d79bF369FC38d2210138007b66D4Dd8433', // TODO: Update when deployed to mainnet
+};
+
+// ============================================================================
+// USDC Token Addresses
+// ============================================================================
+
+export const USDC_ADDRESS: Record<number, `0x${string}`> = {
+  [base.id]: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  [baseSepolia.id]: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+};
 
 export const USDC_DECIMALS = 6;
 
-// Contract addresses (will be set after deployment)
-export const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS ||
-  '0x0000000000000000000000000000000000000000') as `0x${string}`;
+// ============================================================================
+// Contract Template Types
+// ============================================================================
 
-export const RENTAL_IMPLEMENTATION = (process.env.NEXT_PUBLIC_RENTAL_IMPLEMENTATION ||
-  '0x0000000000000000000000000000000000000000') as `0x${string}`;
+export const CONTRACT_TEMPLATES = {
+  RENT_VAULT: 'RentVault',
+  GROUP_BUY_ESCROW: 'GroupBuyEscrow',
+  STABLE_ALLOWANCE_TREASURY: 'StableAllowanceTreasury',
+} as const;
 
-// Time constants
+export type ContractTemplate = typeof CONTRACT_TEMPLATES[keyof typeof CONTRACT_TEMPLATES];
+
+// ============================================================================
+// Time Constants
+// ============================================================================
+
 export const MONTH_DURATION = 30 * 24 * 60 * 60; // 30 days in seconds
 export const MAX_DURATION_MONTHS = 60;
 export const TERMINATION_NOTICE_PERIOD = 30 * 24 * 60 * 60; // 30 days in seconds
 
-// Chain-specific configs
+// ============================================================================
+// Chain-Specific Configs
+// ============================================================================
+
 export const CHAIN_CONFIG = {
   [base.id]: {
     name: 'Base',
@@ -35,3 +78,13 @@ export const CHAIN_CONFIG = {
     blockExplorer: 'https://sepolia.basescan.org',
   },
 } as const;
+
+// ============================================================================
+// Deprecated (Old RentalFactory - for backwards compatibility)
+// ============================================================================
+
+// @deprecated Use CIVITAS_FACTORY_ADDRESS instead
+export const FACTORY_ADDRESS = CIVITAS_FACTORY_ADDRESS[baseSepolia.id];
+
+// @deprecated Use RENT_VAULT_IMPL instead
+export const RENTAL_IMPLEMENTATION = RENT_VAULT_IMPL[baseSepolia.id];

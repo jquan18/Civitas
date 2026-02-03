@@ -1,3 +1,120 @@
+// ============================================================================
+// CivitasFactory ABI
+// ============================================================================
+
+export const CIVITAS_FACTORY_ABI = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: '_usdc', type: 'address', internalType: 'address' },
+      { name: '_rentVaultImpl', type: 'address', internalType: 'address' },
+      { name: '_groupBuyEscrowImpl', type: 'address', internalType: 'address' },
+      { name: '_stableAllowanceTreasuryImpl', type: 'address', internalType: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'createRentVault',
+    inputs: [
+      { name: '_recipient', type: 'address', internalType: 'address' },
+      { name: '_rentAmount', type: 'uint256', internalType: 'uint256' },
+      { name: '_dueDate', type: 'uint256', internalType: 'uint256' },
+      { name: '_tenants', type: 'address[]', internalType: 'address[]' },
+      { name: '_shareBps', type: 'uint256[]', internalType: 'uint256[]' },
+    ],
+    outputs: [{ name: 'clone', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'createGroupBuyEscrow',
+    inputs: [
+      { name: '_recipient', type: 'address', internalType: 'address' },
+      { name: '_fundingGoal', type: 'uint256', internalType: 'uint256' },
+      { name: '_expiryDate', type: 'uint256', internalType: 'uint256' },
+      { name: '_timelockRefundDelay', type: 'uint256', internalType: 'uint256' },
+      { name: '_participants', type: 'address[]', internalType: 'address[]' },
+      { name: '_shareBps', type: 'uint256[]', internalType: 'uint256[]' },
+    ],
+    outputs: [{ name: 'clone', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'createStableAllowanceTreasury',
+    inputs: [
+      { name: '_owner', type: 'address', internalType: 'address' },
+      { name: '_recipient', type: 'address', internalType: 'address' },
+      { name: '_allowancePerIncrement', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: 'clone', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'usdc',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract IERC20' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'rentVaultImpl',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'groupBuyEscrowImpl',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'stableAllowanceTreasuryImpl',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    name: 'RentVaultCreated',
+    inputs: [
+      { name: 'creator', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'clone', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'recipient', type: 'address', indexed: true, internalType: 'address' },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'GroupBuyEscrowCreated',
+    inputs: [
+      { name: 'creator', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'clone', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'recipient', type: 'address', indexed: true, internalType: 'address' },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'TreasuryCreated',
+    inputs: [
+      { name: 'creator', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'clone', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'owner_', type: 'address', indexed: true, internalType: 'address' },
+    ],
+    anonymous: false,
+  },
+] as const;
+
+// ============================================================================
+// Legacy ABIs (keeping for backward compatibility)
+// ============================================================================
+
 export const RENTAL_FACTORY_ABI = [
   {
     type: 'constructor',
