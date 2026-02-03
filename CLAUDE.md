@@ -12,7 +12,7 @@ Civitas is an AI-powered cross-chain rental agreement platform built for ETH Hac
 
 - **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS
 - **Web3**: RainbowKit v2, wagmi v2, viem
-- **AI**: Gemini 3 Flash (`gemini-2.0-flash-exp`), Vercel AI SDK
+- **AI**: Gemini 3 Flash Preview (`gemini-3-flash-preview`), Vercel AI SDK
 - **Smart Contracts**: Solidity 0.8.20, Foundry
 - **Cross-Chain**: LI.FI Widget
 - **Identity**: Basenames (ENS on Base)
@@ -313,7 +313,7 @@ const schema = z.object({
 });
 
 const { object } = await generateObject({
-  model: google('gemini-2.0-flash-exp'),
+  model: google('gemini-3-flash-preview'),
   schema,
   prompt: 'Extract...',
 });

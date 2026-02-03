@@ -31,7 +31,7 @@ export function StatusBadge({ status, size = 'md', label }: StatusBadgeProps) {
 
   return (
     <span
-      className={`inline-block ${config.bg} border-[2px] border-black font-black uppercase tracking-wide ${sizeConfig[size]}`}
+      className={`inline-block ${config.bg} border-[2px] border-black font-black text-black uppercase tracking-wide ${sizeConfig[size]}`}
     >
       {displayText}
     </span>

@@ -23,8 +23,8 @@ export function ContractCard({ config, isComplete }: ContractCardProps) {
     <TornPaperCard className="animate-receipt-print">
       {/* Receipt Header */}
       <div className="mb-6 text-center">
-        <h2 className="font-headline text-3xl uppercase mb-2">RECEIPT</h2>
-        <p className="font-display text-xs opacity-60">ID: {receiptId}</p>
+        <h2 className="font-headline text-3xl uppercase mb-2 text-black">RECEIPT</h2>
+        <p className="font-display text-xs text-black opacity-60">ID: {receiptId}</p>
         <div className="mt-3 flex justify-center">
           <StatusBadge status={isComplete ? 'ready' : 'incomplete'} size="sm" />
         </div>
@@ -76,7 +76,7 @@ export function ContractCard({ config, isComplete }: ContractCardProps) {
       {/* Total Amount Highlight */}
       <div className="border-y-[3px] border-black bg-gray-50 -mx-8 px-8 py-4 mb-6">
         <div className="flex justify-between items-center">
-          <span className="font-headline text-lg uppercase">TOTAL</span>
+          <span className="font-headline text-lg uppercase text-black">TOTAL</span>
           <div className="bg-black px-3 py-1 inline-block">
             <span className="text-hot-pink font-headline text-2xl">
               {totalAmount > 0 ? `${totalAmount.toLocaleString()}` : '—'}

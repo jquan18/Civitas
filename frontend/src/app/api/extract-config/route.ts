@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   try {
     const { object } = await generateObject({
-      model: google('gemini-2.0-flash-exp'),
+      model: google('gemini-3-flash-preview'),
       schema: RentalConfigSchema,
       prompt: `${CONFIG_EXTRACTION_PROMPT}\n\nConversation:\n${JSON.stringify(messages)}`,
     });

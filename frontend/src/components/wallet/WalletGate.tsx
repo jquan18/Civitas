@@ -40,7 +40,7 @@ export function WalletGate({
         <HardShadowCard className="p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <Wallet className="w-16 h-16 text-black animate-pulse" />
-            <p className="font-headline text-2xl uppercase">Connecting...</p>
+            <p className="font-headline text-2xl uppercase text-black">Connecting...</p>
           </div>
         </HardShadowCard>
       </div>
@@ -59,7 +59,7 @@ export function WalletGate({
           {/* Warning Banner */}
           <div className="bg-warning-yellow border-4 border-black shadow-[8px_8px_0px_#000] p-4 mb-6 flex items-center gap-3">
             <AlertTriangle className="w-8 h-8 text-black shrink-0" strokeWidth={3} />
-            <p className="font-display font-bold uppercase text-sm">
+            <p className="font-display font-bold uppercase text-sm text-black">
               ⚠️ Wallet Connection Required to Continue
             </p>
           </div>
@@ -75,12 +75,12 @@ export function WalletGate({
               </div>
 
               {/* Title */}
-              <h2 className="font-headline text-4xl uppercase tracking-tight">
+              <h2 className="font-headline text-4xl uppercase tracking-tight text-black">
                 {fallbackTitle}
               </h2>
 
               {/* Message */}
-              <p className="font-display text-lg max-w-md mx-auto text-gray-700">
+              <p className="font-display text-lg max-w-md mx-auto text-black">
                 {fallbackMessage}
               </p>
 
@@ -91,10 +91,10 @@ export function WalletGate({
 
               {/* Help Text */}
               <div className="pt-6 border-t-2 border-dashed border-black">
-                <p className="font-display text-xs uppercase text-gray-600 mb-2">
+                <p className="font-display text-xs uppercase text-black font-bold mb-2">
                   Why do I need to connect?
                 </p>
-                <ul className="font-display text-sm text-left max-w-md mx-auto space-y-2">
+                <ul className="font-display text-sm text-left max-w-md mx-auto space-y-2 text-black">
                   <li className="flex items-start gap-2">
                     <span className="text-acid-lime font-bold">→</span>
                     <span>Deploy smart contracts to Base L2</span>
@@ -112,10 +112,10 @@ export function WalletGate({
 
               {/* Security Note */}
               <div className="bg-stark-white border-2 border-black p-4 text-left">
-                <p className="font-display text-xs uppercase font-bold mb-1">
+                <p className="font-display text-xs uppercase font-bold mb-1 text-black">
                   🔒 Secure Connection
                 </p>
-                <p className="font-display text-xs text-gray-600">
+                <p className="font-display text-xs text-black opacity-75">
                   We never store your private keys. Your wallet stays in your control.
                 </p>
               </div>

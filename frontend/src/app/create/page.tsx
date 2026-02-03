@@ -27,7 +27,7 @@ export default function CreatePage() {
           {/* Page Header */}
           <div className="p-8 pb-4">
             <div className="inline-block bg-acid-lime border-[3px] border-black px-6 py-3 shadow-[4px_4px_0px_#000]">
-              <h1 className="font-headline text-2xl uppercase tracking-wide">CREATE AGREEMENT</h1>
+              <h1 className="font-headline text-2xl uppercase tracking-wide text-black">CREATE AGREEMENT</h1>
             </div>
           </div>
 

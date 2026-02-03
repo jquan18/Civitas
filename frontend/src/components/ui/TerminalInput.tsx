@@ -28,8 +28,8 @@ export function TerminalInput({
   return (
     <form onSubmit={handleSubmit} className="flex items-stretch border-[3px] border-black shadow-[4px_4px_0px_#000]">
       {/* Prompt Indicator */}
-      <div className="flex items-center justify-center bg-acid-lime px-4 border-r-[3px] border-black">
-        <span className="text-black font-black text-xl">&gt;</span>
+      <div className="flex items-center justify-center bg-acid-lime px-5 border-r-[3px] border-black">
+        <span className="text-black font-black text-2xl leading-none">&gt;</span>
       </div>
 
       {/* Input Field */}
@@ -40,11 +40,11 @@ export function TerminalInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full h-full px-4 py-4 bg-transparent font-display text-black placeholder-gray-400 focus:outline-none disabled:opacity-50"
+          className="w-full h-full px-5 py-4 bg-transparent font-display text-base font-medium text-black placeholder-gray-400 focus:outline-none disabled:opacity-50"
         />
         {/* Blinking Cursor */}
         {!disabled && value === '' && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-5 bg-black animate-blink" />
+          <span className="absolute right-5 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-black animate-blink" />
         )}
       </div>
 
@@ -52,9 +52,9 @@ export function TerminalInput({
       <button
         type="submit"
         disabled={disabled || !value.trim()}
-        className="bg-acid-lime px-6 border-l-[3px] border-black hover:bg-warning-yellow transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-acid-lime px-7 border-l-[3px] border-black hover:bg-warning-yellow transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
-        <Send className="w-5 h-5 text-black" />
+        <Send className="w-6 h-6 text-black" strokeWidth={3} />
       </button>
     </form>
   );

@@ -25,16 +25,16 @@ export function ChatInterface() {
     <div className="flex flex-col h-full bg-stark-white border-[3px] border-black shadow-[4px_4px_0px_#000]">
       {/* Header */}
       <div className="bg-warning-yellow border-b-[3px] border-black px-6 py-3 shrink-0">
-        <h2 className="font-headline text-xl uppercase tracking-wide">COMMAND ZONE</h2>
+        <h2 className="font-headline text-xl uppercase tracking-wide text-black">COMMAND ZONE</h2>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 relative pattern-grid">
+      <div className="flex-1 overflow-y-auto p-8 relative pattern-grid">
         {messages.length === 0 && (
-          <HardShadowCard className="mx-auto max-w-md mt-8">
-            <div className="text-center">
-              <h3 className="font-headline text-2xl uppercase mb-3">START CHATTING</h3>
-              <p className="font-display text-sm">
+          <HardShadowCard className="mx-auto max-w-lg mt-12 relative z-10 p-8">
+            <div className="text-center space-y-4">
+              <h3 className="font-headline text-3xl uppercase text-black leading-tight">START CHATTING</h3>
+              <p className="font-display text-base text-black leading-relaxed">
                 Tell me about your rental agreement and I&apos;ll help you create it on-chain.
               </p>
             </div>
@@ -42,16 +42,17 @@ export function ChatInterface() {
         )}
 
         {messages.map((message) => (
-          <ChatBubble
-            key={message.id}
-            role={message.role === 'user' ? 'user' : 'agent'}
-            message={getMessageText(message)}
-          />
+          <div key={message.id} className="relative z-10">
+            <ChatBubble
+              role={message.role === 'user' ? 'user' : 'agent'}
+              message={getMessageText(message)}
+            />
+          </div>
         ))}
 
         {isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="bg-stark-white border-[3px] border-black px-6 py-4 shadow-[2px_2px_0px_#000]">
+          <div className="flex justify-start mb-6 relative z-10">
+            <div className="bg-stark-white border-[3px] border-black px-6 py-5 shadow-[3px_3px_0px_#000]">
               <LoadingSquares size="md" />
             </div>
           </div>

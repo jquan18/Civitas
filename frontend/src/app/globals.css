@@ -38,30 +38,65 @@ body {
   font-family: var(--font-display), system-ui, sans-serif;
 }
 
-/* Custom Scrollbar */
+/* Neo Brutalist Text Styles - High Contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: #000000;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+p, span, div {
+  color: inherit;
+}
+
+/* Ensure strong contrast for readability */
+.font-headline {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.font-display {
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* Custom Scrollbar - Enhanced for Neo Brutalism */
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 14px;
 }
 
 ::-webkit-scrollbar-track {
   background: #FAF9F6;
-  border-left: 2px solid #000;
+  border-left: 3px solid #000;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #000;
-  border: 2px solid #FAF9F6;
+  border: 3px solid #FAF9F6;
+  transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #FF00FF;
+  border: 3px solid #FAF9F6;
 }
+
 
 /* Dot Grid Pattern */
 .pattern-grid {
+  position: relative;
+}
+
+.pattern-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background-image: radial-gradient(#000 1px, transparent 1px);
   background-size: 20px 20px;
-  opacity: 0.1;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Marquee Animation */
