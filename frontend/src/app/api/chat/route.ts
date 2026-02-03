@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { getGoogleProvider } from '@/lib/ai/google-provider';
 import { getTemplatePrompt } from '@/lib/ai/prompts';
 
 export const runtime = 'edge';
@@ -19,6 +19,9 @@ export async function POST(req: Request) {
 
     // Get the appropriate system prompt based on template
     const systemPrompt = getTemplatePrompt(templateId || null);
+
+    // Get configured provider (local proxy in dev, official API in production)
+    const google = getGoogleProvider();
 
     // Pass messages directly - the AI SDK handles conversion internally
     const result = streamText({

@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { getGoogleProvider } from '@/lib/ai/google-provider';
 import { NameSuggestionSchema } from '@/lib/ai/schemas';
 import { NAME_GENERATION_PROMPT } from '@/lib/ai/prompts';
 import type { RentalConfig } from '@/lib/ai/schemas';
@@ -23,6 +23,9 @@ Rental Details:
 ${conversationContext ? `Additional Context:\n${conversationContext}` : ''}
 
 Generate a memorable, semantic subdomain name.`;
+
+    // Get configured provider (local proxy in dev, official API in production)
+    const google = getGoogleProvider();
 
     const { object } = await generateObject({
       model: google('gemini-2.5-flash'),

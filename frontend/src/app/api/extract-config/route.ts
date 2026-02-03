@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { getGoogleProvider } from '@/lib/ai/google-provider';
 import { 
   RentalConfigSchema,
   RentVaultConfigSchema,
@@ -89,6 +89,9 @@ export async function POST(req: Request) {
 
   try {
     const extractionPrompt = getExtractionPrompt(templateId);
+    
+    // Get configured provider (local proxy in dev, official API in production)
+    const google = getGoogleProvider();
     
     const { object } = await generateObject({
       model: google('gemini-2.5-flash'),

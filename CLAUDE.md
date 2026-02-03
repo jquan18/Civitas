@@ -71,6 +71,29 @@ forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --v
 forge script script/Deploy.s.sol --rpc-url base --broadcast --verify
 ```
 
+## Local Development with Gemini Proxy
+
+For local development, you can use a local Gemini API proxy (e.g., Antigravity) instead of the official Google API:
+
+1. Start your local proxy server (e.g., on port 8045)
+2. Set environment variables in `.env`:
+   ```env
+   GEMINI_LOCAL_API_KEY=your_proxy_api_key
+   GEMINI_LOCAL_BASE_URL=http://127.0.0.1:8045
+   ```
+3. Run `npm run dev` - the app will automatically use the local proxy
+
+The application automatically detects the environment:
+- **Development** (`NODE_ENV=development`): Uses local proxy if configured, falls back to official API
+- **Production**: Always uses official Google Generative AI API
+
+The provider configuration is centralized in `lib/ai/google-provider.ts` and used by all AI endpoints:
+- `api/chat/route.ts` - Streaming chat responses
+- `api/extract-config/route.ts` - Config extraction
+- `api/generate-name/route.ts` - Basename generation
+
+For production deployments, only `GOOGLE_GENERATIVE_AI_API_KEY` is required.
+
 ## Key Design Decisions
 
 ### Smart Contracts
