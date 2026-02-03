@@ -74,6 +74,8 @@ export function useCivitasContractDeploy() {
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
   const [deployedAddress, setDeployedAddress] = useState<`0x${string}` | null>(null);
   const [isStoring, setIsStoring] = useState(false);
+  const [deploymentParams, setDeploymentParams] = useState<DeploymentParams | null>(null);
+  const [hasStored, setHasStored] = useState(false);
 
   /**
    * Deploy contract based on selected template
@@ -88,7 +90,11 @@ export function useCivitasContractDeploy() {
       throw new Error('CivitasFactory not deployed on this network');
     }
 
+    // Reset state for new deployment
+    setHasStored(false);
+    setDeployedAddress(null);
     setSelectedTemplate(template);
+    setDeploymentParams(params);
 
     // Persist deployment intent to localStorage BEFORE deploying
     const pendingDeployment: PendingDeployment = {
@@ -171,17 +177,12 @@ export function useCivitasContractDeploy() {
    * Auto-store contract in database after successful deployment
    */
   useEffect(() => {
-    if (!isSuccess || !receipt || !selectedTemplate || !address || isStoring) return;
+    if (!isSuccess || !receipt || !selectedTemplate || !address || isStoring || !deploymentParams || hasStored) return;
 
     const storeContract = async () => {
       try {
         setIsStoring(true);
         console.log('✅ Transaction confirmed! Parsing logs...');
-
-        // Skip database storage for test page (these are template contracts, not rental contracts)
-        // TODO: Update database schema to support all 3 contract types
-        console.log('ℹ️ Skipping database storage for test contract deployment');
-        return;
 
         // Parse the event logs to get the deployed contract address
         let contractAddress: `0x${string}` | null = null;
@@ -242,37 +243,94 @@ export function useCivitasContractDeploy() {
           return;
         }
 
-        // Store in database
+        // Build config object based on template
+        let config: any = {};
+
+        switch (selectedTemplate) {
+          case CONTRACT_TEMPLATES.RENT_VAULT: {
+            const p = deploymentParams as RentVaultParams;
+            config = {
+              recipient: p.recipient,
+              rentAmount: p.rentAmount.toString(),
+              dueDate: p.dueDate.toString(),
+              tenants: p.tenants,
+              shareBps: p.shareBps.map(s => s.toString()),
+            };
+            break;
+          }
+          case CONTRACT_TEMPLATES.GROUP_BUY_ESCROW: {
+            const p = deploymentParams as GroupBuyEscrowParams;
+            config = {
+              recipient: p.recipient,
+              fundingGoal: p.fundingGoal.toString(),
+              expiryDate: p.expiryDate.toString(),
+              timelockRefundDelay: p.timelockRefundDelay.toString(),
+              participants: p.participants,
+              shareBps: p.shareBps.map(s => s.toString()),
+            };
+            break;
+          }
+          case CONTRACT_TEMPLATES.STABLE_ALLOWANCE_TREASURY: {
+            const p = deploymentParams as StableAllowanceTreasuryParams;
+            config = {
+              owner: p.owner,
+              recipient: p.recipient,
+              allowancePerIncrement: p.allowancePerIncrement.toString(),
+            };
+            break;
+          }
+        }
+
+        // Store in database via API route
         console.log('💾 Storing contract in database...');
-        const pendingDeployment: PendingDeployment = {
-          landlord: address,
-          tenant: address,
-          monthlyAmount: '0',
-          totalMonths: 0,
-          basename: selectedTemplate,
-          timestamp: Date.now(),
-          txHash: hash,
-        };
 
-        const success = await storeContractInDatabase(contractAddress, pendingDeployment);
+        const response = await fetch('/api/contracts/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contract_address: contractAddress,
+            template_id: selectedTemplate,
+            creator_address: address,
+            chain_id: chainId,
+            state: 0, // Deployed state
+            basename: null, // Can add basename support later
+            config,
+            transaction_hash: hash,
+          }),
+        });
 
-        if (success) {
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('❌ API error:', errorData);
+          throw new Error(errorData.error || 'Failed to store contract');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
           clearPendingDeployment();
           setDeployedAddress(contractAddress);
-          console.log('✅ Contract stored and localStorage cleared');
+          setHasStored(true); // Mark as stored to prevent duplicate attempts
+          console.log('✅ Contract stored in database:', result.contract.id);
           console.log('🎉 Deployment complete! Contract address:', contractAddress);
         } else {
-          console.warn('⚠️ Failed to store contract, but will retry on next app load');
+          console.warn('⚠️ Failed to store contract');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to process deployment:', error);
+        // If it's a duplicate key error, it means we already stored it successfully
+        if (error.message?.includes('duplicate key')) {
+          console.log('ℹ️ Contract already stored (duplicate prevented)');
+          setDeployedAddress(contractAddress);
+          setHasStored(true);
+        }
       } finally {
         setIsStoring(false);
       }
     };
 
     storeContract();
-  }, [isSuccess, receipt, selectedTemplate, address, hash, isStoring]);
+  }, [isSuccess, receipt, selectedTemplate, address, hash, isStoring, deploymentParams, chainId, hasStored]);
 
   return {
     deployContract,

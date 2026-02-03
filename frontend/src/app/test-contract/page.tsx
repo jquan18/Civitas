@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { parseUnits } from 'viem';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useCivitasContractDeploy, type RentVaultParams, type GroupBuyEscrowParams, type StableAllowanceTreasuryParams } from '@/hooks/useCivitasContractDeploy';
 import { CONTRACT_TEMPLATES, type ContractTemplate } from '@/lib/contracts/constants';
 
@@ -11,6 +13,7 @@ export default function TestContractPage() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
+  const router = useRouter();
   const { deployContract, isDeploying, isSuccess, deploymentHash, deployedAddress, error } = useCivitasContractDeploy();
 
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
@@ -166,7 +169,7 @@ export default function TestContractPage() {
                   </a>
                 </div>
 
-                <div>
+                <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700">Transaction Hash:</p>
                   <a
                     href={`https://sepolia.basescan.org/tx/${deploymentHash}`}
@@ -175,6 +178,23 @@ export default function TestContractPage() {
                     className="font-mono text-xs text-blue-600 hover:underline break-all"
                   >
                     {deploymentHash}
+                  </a>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <Link
+                    href="/my-contracts"
+                    className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                  >
+                    📋 View in My Contracts
+                  </Link>
+                  <a
+                    href={`https://sepolia.basescan.org/address/${deployedAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition text-center"
+                  >
+                    🔍 View on BaseScan
                   </a>
                 </div>
               </div>
