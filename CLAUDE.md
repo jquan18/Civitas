@@ -261,6 +261,30 @@ The factory uses OpenZeppelin's Clones library with deterministic salts. To pred
 - Uses mainnet ENS resolver via viem
 - Falls back to address validation if not ENS format
 
+## AI Agent Date Handling
+
+**Updated: February 4, 2026**
+
+The AI agent automatically detects the user's timezone and converts natural language dates to ISO 8601 format.
+
+### How It Works
+1. **Timezone Detection** (`hooks/useUserTimezone.ts`): Automatically detects user's timezone from browser
+2. **Temporal Context** (`lib/ai/temporal-context.ts`): Injects current date/time into every AI prompt
+3. **Conversational Prompts** (`lib/ai/prompts.ts`): AI asks questions one at a time with date conversion examples
+4. **Date Validation** (`lib/contracts/config-transformer.ts`): Validates and converts dates before deployment
+
+### Examples
+- User: "2nd of each month" → AI: "Would the first payment be on February 2nd, 2026?" → Converts to `"2026-02-02T00:00:00.000Z"`
+- User: "next Friday" → AI calculates actual date based on user's timezone
+- User: "March 15th" → AI adds current year if missing
+
+### Date Format Standard
+- **Input**: Natural language or ISO 8601 (`YYYY-MM-DDTHH:MM:SS.000Z`)
+- **Storage**: Unix timestamp (BigInt seconds)
+- **Validation**: `parseDateToBigInt()` helper provides clear error messages
+
+See `IMPLEMENTATION_SUMMARY.md` for full technical details.
+
 ## Development Workflow
 
 ### Adding a New Feature

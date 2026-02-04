@@ -6,6 +6,8 @@ import {
   GroupBuyEscrowConfigSchema,
   StableAllowanceTreasuryConfigSchema,
 } from '@/lib/ai/schemas';
+import type { TimezoneInfo } from '@/hooks/useUserTimezone';
+import { getCurrentDateTimeContext, getDateConversionExamples } from '@/lib/ai/temporal-context';
 
 export const runtime = 'edge';
 
@@ -19,42 +21,84 @@ const schemaMap = {
 }
 
 // Get extraction prompt based on template
-function getExtractionPrompt(templateId: string): string {
+function getExtractionPrompt(templateId: string, timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
+  const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+  const dateExamples = getDateConversionExamples(timezoneInfo);
+  
   switch (templateId) {
     case 'rent-vault':
-      return `Extract Rent Vault configuration from the conversation.
+      return `${dateTimeContext}
+
+Extract Rent Vault configuration from the conversation.
 
 Fields to extract (leave as undefined if not mentioned):
-- recipient: Landlord Ethereum address (0x...) - ONLY extract if explicitly mentioned
+- recipient: Landlord Ethereum address (0x...) - DEFAULT to connected wallet if user is landlord
 - rentAmount: Total rent in USDC (as string) - ONLY extract if explicitly mentioned
-- dueDate: Due date (ISO string or timestamp) - ONLY extract if explicitly mentioned
+- dueDate: Due date in ISO 8601 format - ONLY extract if explicitly mentioned
 - tenants: Array of tenant addresses - ONLY extract if explicitly mentioned
 - shareBps: Array of share basis points - ONLY extract if explicitly mentioned
 
-IMPORTANT: If the conversation doesn't contain specific values, leave all fields undefined. 
-Do NOT invent or guess values. Return an empty object if no contract data is available.`
+WALLET ADDRESS HANDLING:
+- If user indicates they are the landlord/recipient, use the connected wallet address automatically
+- DO NOT wait for them to provide their own address manually
+- Connected wallet: ${walletAddress || 'Not available'}
+
+CRITICAL DATE HANDLING RULES:
+1. Output format MUST be ISO 8601: "YYYY-MM-DDTHH:MM:SS.000Z"
+2. If user provides relative dates, calculate the NEXT occurrence as a specific date
+3. Use the user's local timezone (provided in context above) for all date calculations
+4. NEVER output natural language like "2nd of each month"
+
+${dateExamples}
+
+VALIDATION:
+- dueDate must always be a future date (after current date shown above)
+- Format: YYYY-MM-DDTHH:MM:SS.000Z (exactly)
+- If unsure, leave undefined instead of guessing
+
+IMPORTANT: If conversation doesn't contain specific values, leave fields undefined. 
+Do NOT invent or guess values. Return empty object if no contract data available.`
 
     case 'group-buy-escrow':
-      return `Extract Group Buy Escrow configuration from the conversation.
+      return `${dateTimeContext}
+
+Extract Group Buy Escrow configuration from the conversation.
 
 Fields to extract (leave as undefined if not mentioned):
 - recipient: Seller Ethereum address (0x...) - ONLY extract if explicitly mentioned
 - fundingGoal: Total goal in USDC (as string) - ONLY extract if explicitly mentioned
-- expiryDate: Funding deadline (ISO string or timestamp) - ONLY extract if explicitly mentioned
+- expiryDate: Funding deadline in ISO 8601 format - ONLY extract if explicitly mentioned
 - timelockRefundDelay: Refund delay in seconds (as string) - ONLY extract if explicitly mentioned
-- participants: Array of participant addresses - ONLY extract if explicitly mentioned
+- participants: Array of participant addresses - Include connected wallet if user is participating
 - shareBps: Array of share basis points - ONLY extract if explicitly mentioned
 
-IMPORTANT: If the conversation doesn't contain specific values, leave all fields undefined. 
-Do NOT invent or guess values. Return an empty object if no contract data is available.`
+WALLET ADDRESS HANDLING:
+- If user indicates they are a participant, include the connected wallet address in participants array
+- Connected wallet: ${walletAddress || 'Not available'}
+
+CRITICAL DATE HANDLING RULES (same as Rent Vault):
+1. Output format MUST be ISO 8601: "YYYY-MM-DDTHH:MM:SS.000Z"
+2. Calculate NEXT occurrence for relative dates
+3. Use the user's local timezone
+4. Expiry date must be future date
+
+${dateExamples}
+
+IMPORTANT: If conversation doesn't contain specific values, leave fields undefined.
+Do NOT invent or guess values.`
 
     case 'stable-allowance-treasury':
       return `Extract Stable Allowance Treasury configuration from the conversation.
 
 Fields to extract (leave as undefined if not mentioned):
-- owner: Controller Ethereum address (0x...) - ONLY extract if explicitly mentioned
-- recipient: Beneficiary Ethereum address (0x...) - ONLY extract if explicitly mentioned
+- owner: Controller Ethereum address (0x...) - DEFAULT to connected wallet if user is owner
+- recipient: Beneficiary Ethereum address (0x...) - DEFAULT to connected wallet if user is recipient
 - allowancePerIncrement: USDC per claim (as string) - ONLY extract if explicitly mentioned
+
+WALLET ADDRESS HANDLING:
+- If user indicates they are the owner/controller, use connected wallet for owner field
+- If user indicates they are the recipient, use connected wallet for recipient field
+- Connected wallet: ${walletAddress || 'Not available'}
 
 IMPORTANT: If the conversation doesn't contain specific values, leave all fields undefined. 
 Do NOT invent or guess values. Return an empty object if no contract data is available.
@@ -69,7 +113,7 @@ Leave all fields undefined if not mentioned. Do NOT invent or guess values.`
 }
 
 export async function POST(req: Request) {
-  const { messages, templateId } = await req.json();
+  const { messages, templateId, timezone, walletAddress } = await req.json();
 
   if (!templateId) {
     return Response.json(
@@ -88,7 +132,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const extractionPrompt = getExtractionPrompt(templateId);
+    const extractionPrompt = getExtractionPrompt(templateId, timezone, walletAddress);
     
     // Get configured provider (local proxy in dev, official API in production)
     const google = getGoogleProvider();

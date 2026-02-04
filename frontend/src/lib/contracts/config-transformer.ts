@@ -11,6 +11,40 @@ import type {
 } from '@/lib/ai/schemas';
 
 /**
+ * Parse a date string to BigInt Unix timestamp
+ * Handles ISO 8601 strings and numeric timestamps
+ * Throws descriptive errors for invalid formats
+ */
+function parseDateToBigInt(dateStr: string, fieldName: string = 'date'): bigint {
+  // Try ISO format (YYYY-MM-DD or full ISO 8601)
+  if (dateStr.includes('-') || dateStr.includes('T')) {
+    const timestamp = new Date(dateStr).getTime();
+    
+    if (isNaN(timestamp)) {
+      throw new Error(
+        `Invalid ${fieldName} format: "${dateStr}". ` +
+        `Expected ISO 8601 date (e.g., "2026-02-02T00:00:00.000Z"), but received an unparseable date string.`
+      );
+    }
+    
+    return BigInt(Math.floor(timestamp / 1000));
+  }
+  
+  // Try numeric timestamp
+  if (/^\d+$/.test(dateStr)) {
+    return BigInt(dateStr);
+  }
+  
+  // Invalid format - provide helpful error
+  throw new Error(
+    `Cannot parse ${fieldName}: "${dateStr}". ` +
+    `Expected ISO 8601 date (e.g., "2026-02-02T00:00:00.000Z") or Unix timestamp, ` +
+    `but received natural language or invalid format. ` +
+    `Please ask the AI to provide a specific date like "February 2nd, 2026" and try again.`
+  );
+}
+
+/**
  * Transform AI-extracted config to deployment parameters
  */
 export function transformConfigToDeployParams(
@@ -25,15 +59,8 @@ export function transformConfigToDeployParams(
       const rentAmountStr = c.rentAmount.replace(/,/g, '');
       const rentAmount = parseUnits(rentAmountStr, 6);
       
-      // Parse due date (could be ISO string or timestamp)
-      let dueDate: bigint;
-      if (c.dueDate.includes('-') || c.dueDate.includes('T')) {
-        // ISO date string
-        dueDate = BigInt(Math.floor(new Date(c.dueDate).getTime() / 1000));
-      } else {
-        // Assume it's already a timestamp
-        dueDate = BigInt(c.dueDate);
-      }
+      // Parse due date with validation
+      const dueDate = parseDateToBigInt(c.dueDate, 'due date');
       
       // Convert shareBps to bigint array
       const shareBps = c.shareBps.map(s => BigInt(s));
@@ -54,13 +81,8 @@ export function transformConfigToDeployParams(
       const fundingGoalStr = c.fundingGoal.replace(/,/g, '');
       const fundingGoal = parseUnits(fundingGoalStr, 6);
       
-      // Parse expiry date
-      let expiryDate: bigint;
-      if (c.expiryDate.includes('-') || c.expiryDate.includes('T')) {
-        expiryDate = BigInt(Math.floor(new Date(c.expiryDate).getTime() / 1000));
-      } else {
-        expiryDate = BigInt(c.expiryDate);
-      }
+      // Parse expiry date with validation
+      const expiryDate = parseDateToBigInt(c.expiryDate, 'expiry date');
       
       // Parse timelock delay (could be in days, convert to seconds)
       let timelockRefundDelay: bigint;

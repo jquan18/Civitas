@@ -2,8 +2,10 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { templateRegistry } from '@/lib/templates/registry';
 import type { TemplateDefinition } from '@/lib/templates/types';
+import { useUserTimezone } from './useUserTimezone';
 
 export function useTemplateChat() {
   const [detectedTemplate, setDetectedTemplate] = useState<TemplateDefinition | null>(null);
@@ -13,6 +15,12 @@ export function useTemplateChat() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [input, setInput] = useState('');
 
+  // Detect user's timezone from browser
+  const timezone = useUserTimezone();
+  
+  // Get connected wallet address
+  const { address: walletAddress } = useAccount();
+
   // Active template is manual selection or AI detection
   const activeTemplate = manualTemplate || detectedTemplate;
 
@@ -20,6 +28,8 @@ export function useTemplateChat() {
     api: '/api/chat',
     body: {
       templateId: activeTemplate?.id,
+      timezone, // Pass timezone to API
+      walletAddress, // Pass connected wallet address
     },
   });
 
@@ -80,6 +90,8 @@ export function useTemplateChat() {
         body: JSON.stringify({ 
           messages,
           templateId: activeTemplate.id,
+          timezone, // Pass timezone for date conversion
+          walletAddress, // Pass wallet address for auto-fill
         }),
       });
 
@@ -125,6 +137,8 @@ export function useTemplateChat() {
         body: JSON.stringify({
           messages: updatedMessages,
           templateId: activeTemplate?.id,
+          timezone, // Pass timezone for temporal context
+          walletAddress, // Pass wallet address
         }),
       });
 

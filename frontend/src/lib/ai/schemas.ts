@@ -28,7 +28,7 @@ export const RentVaultConfigSchema = z.object({
     .describe('Total rent amount in USDC (will be converted to 6 decimals)'),
   dueDate: z.string()
     .optional()
-    .describe('Due date for rent payment (ISO date string or timestamp)'),
+    .describe('Due date as ISO 8601 date string (e.g., "2026-02-02T00:00:00.000Z") or Unix timestamp. MUST be specific future date in ISO format, NOT relative phrases like "2nd of month"'),
   tenants: z.array(z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid tenant address'))
     .optional()
     .describe('Array of tenant Ethereum addresses'),
@@ -50,7 +50,7 @@ export const GroupBuyEscrowConfigSchema = z.object({
     .describe('Total funding goal in USDC'),
   expiryDate: z.string()
     .optional()
-    .describe('Funding expiry date (ISO date string or timestamp)'),
+    .describe('Funding deadline as ISO 8601 date string (e.g., "2026-03-15T00:00:00.000Z"). MUST be specific future date in ISO format, NOT relative phrases'),
   timelockRefundDelay: z.string()
     .optional()
     .describe('Delay in seconds after goal reached before timelock refund is available'),
