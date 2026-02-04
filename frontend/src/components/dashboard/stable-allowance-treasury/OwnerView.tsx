@@ -121,16 +121,22 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
   };
 
   return (
-    <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+    <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
+      {/* Pattern Grid Background */}
       <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
 
-      <h2 className="font-headline text-2xl uppercase tracking-tighter absolute top-4 left-4 md:left-8 z-10 bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000]">
-        Execution Zone
-      </h2>
+      {/* Fixed Header (outside scroll area) */}
+      <div className="relative z-10 p-4 md:p-6 shrink-0">
+        <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+          Execution Zone
+        </h2>
+      </div>
 
-      {/* Owner Control Panel */}
-      <div className="w-full max-w-md relative z-10 mb-8">
-        <TornPaperCard className={`transform -rotate-1 ${isLowBalance ? 'ring-4 ring-red-500 ring-offset-4' : ''}`}>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+        {/* Owner Control Panel */}
+        <div className="w-full max-w-md relative z-10 mb-8">
+          <TornPaperCard className={`${isLowBalance ? 'ring-4 ring-red-500 ring-offset-4' : ''}`}>
           <div className="flex flex-col gap-6">
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-black border-dashed pb-4">
@@ -220,7 +226,7 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
       </div>
 
       {/* Action Buttons */}
-      <div className="w-full max-w-md space-y-3 relative z-10">
+      <div className="w-full max-w-md space-y-3 relative z-10 mb-8">
         {/* Fund Treasury */}
         <TactileButton
           variant="primary"
@@ -228,11 +234,11 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
           onClick={() => setShowDepositModal(true)}
           disabled={state === 2}
         >
-          <div className="p-2 flex items-center justify-center gap-4">
-            <span className="font-headline text-2xl text-void-black uppercase tracking-widest">
+          <div className="p-2 flex items-center justify-center gap-3">
+            <span className="font-headline text-lg md:text-xl text-void-black uppercase tracking-widest">
               Fund Treasury
             </span>
-            <Wallet className="w-8 h-8 text-void-black group-hover:scale-110 transition-transform" />
+            <Wallet className="w-6 h-6 md:w-7 md:h-7 text-void-black group-hover:scale-110 transition-transform" />
           </div>
         </TactileButton>
 
@@ -243,11 +249,11 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
           onClick={() => setShowApprovalModal(true)}
           disabled={state !== 0}
         >
-          <div className="p-2 flex items-center justify-center gap-4">
-            <span className="font-headline text-2xl text-void-black uppercase tracking-widest">
+          <div className="p-2 flex items-center justify-center gap-3">
+            <span className="font-headline text-lg md:text-xl text-void-black uppercase tracking-widest">
               Approve Allowances
             </span>
-            <Plus className="w-8 h-8 text-void-black group-hover:rotate-90 transition-transform" />
+            <Plus className="w-6 h-6 md:w-7 md:h-7 text-void-black group-hover:rotate-90 transition-transform" />
           </div>
         </TactileButton>
 
@@ -473,6 +479,7 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

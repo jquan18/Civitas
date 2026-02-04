@@ -110,44 +110,6 @@ export default function DashboardPage() {
       fallbackMessage="Connect your wallet to view and manage your contracts"
     >
       <div className="min-h-screen bg-paper-cream h-screen overflow-hidden relative">
-        {/* Network Switcher */}
-        <NetworkSwitcher />
-
-        {/* Sync Button */}
-        <button
-          onClick={syncContracts}
-          disabled={syncing || !address}
-          className={`
-            fixed top-4 right-64 z-50
-            flex items-center gap-2
-            px-4 py-2
-            border-2 border-black
-            shadow-[4px_4px_0px_#000]
-            font-display font-bold text-sm uppercase
-            transition-all
-            ${
-              syncing
-                ? 'bg-gray-300 text-gray-600 cursor-wait'
-                : 'bg-acid-lime text-void-black hover:shadow-[6px_6px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer'
-            }
-          `}
-        >
-          <svg
-            className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          <span>{syncing ? 'Syncing...' : 'Sync Contracts'}</span>
-        </button>
-
         {/* Navigation Rail */}
         <NavigationRail />
 
@@ -159,7 +121,7 @@ export default function DashboardPage() {
           {/* Filters Bar */}
           <div className="bg-white border-b-[3px] border-black p-4 flex gap-4 items-center">
             <span className="font-mono text-xs font-bold uppercase">Filters:</span>
-            
+
             {/* Template Filter */}
             <select
               value={templateFilter}
@@ -186,9 +148,49 @@ export default function DashboardPage() {
               <option value="4">Terminated</option>
             </select>
 
-            {/* Result Count */}
-            <div className="ml-auto bg-black text-[#CCFF00] px-3 py-1 border-2 border-[#CCFF00] font-mono text-sm font-bold">
-              {filteredContracts.length} CONTRACTS
+            {/* Right side controls */}
+            <div className="ml-auto flex items-center gap-3">
+              {/* Result Count */}
+              <div className="bg-acid-lime text-void-black px-3 py-1 border-2 border-black font-mono text-sm font-bold shadow-[2px_2px_0px_#000]">
+                {filteredContracts.length} CONTRACTS
+              </div>
+
+              {/* Sync Button */}
+              <button
+                onClick={syncContracts}
+                disabled={syncing || !address}
+                className={`
+                  flex items-center gap-2
+                  px-3 py-1.5
+                  border-2 border-black
+                  shadow-[2px_2px_0px_#000]
+                  font-display font-bold text-sm uppercase
+                  transition-all
+                  ${
+                    syncing
+                      ? 'bg-gray-300 text-gray-600 cursor-wait'
+                      : 'bg-acid-lime text-void-black hover:shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer'
+                  }
+                `}
+              >
+                <svg
+                  className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync'}</span>
+              </button>
+
+              {/* Network Switcher - inline version */}
+              <NetworkSwitcher inline />
             </div>
           </div>
 

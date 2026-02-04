@@ -5,7 +5,11 @@ import { useSwitchChain, useChainId, useAccount } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { Network, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
-export default function NetworkSwitcher() {
+interface NetworkSwitcherProps {
+  inline?: boolean;
+}
+
+export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps) {
   const { switchChain } = useSwitchChain();
   const currentChainId = useChainId();
   const { connector } = useAccount();
@@ -42,17 +46,17 @@ export default function NetworkSwitcher() {
         onClick={handleSwitchNetwork}
         disabled={isOnBaseSepolia || isSwitching}
         className={`
-          fixed top-4 right-4 z-50
+          ${inline ? 'relative' : 'fixed top-4 right-4 z-50'}
           flex items-center gap-2
-          px-4 py-2
+          ${inline ? 'px-3 py-1.5' : 'px-4 py-2'}
           border-2 border-black
-          shadow-[4px_4px_0px_#000]
+          ${inline ? 'shadow-[2px_2px_0px_#000]' : 'shadow-[4px_4px_0px_#000]'}
           font-display font-bold text-sm uppercase
           transition-all
           ${
             isOnBaseSepolia
               ? 'bg-acid-lime text-void-black cursor-default'
-              : 'bg-hot-pink text-stark-white hover:shadow-[6px_6px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer'
+              : 'bg-hot-pink text-stark-white hover:shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer'
           }
           ${isSwitching ? 'opacity-50 cursor-wait' : ''}
         `}
@@ -60,12 +64,12 @@ export default function NetworkSwitcher() {
         {isOnBaseSepolia ? (
           <>
             <CheckCircle2 className="w-4 h-4" />
-            <span>Base Sepolia</span>
+            <span className={inline ? 'hidden sm:inline' : ''}>Base Sepolia</span>
           </>
         ) : (
           <>
             <AlertCircle className="w-4 h-4" />
-            <span>{isSwitching ? 'Switching...' : 'Switch to Base Sepolia'}</span>
+            <span className={inline ? 'hidden sm:inline' : ''}>{isSwitching ? 'Switching...' : 'Switch Network'}</span>
           </>
         )}
         <Network className="w-4 h-4" />

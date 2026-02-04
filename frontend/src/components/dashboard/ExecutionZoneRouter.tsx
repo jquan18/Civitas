@@ -18,11 +18,19 @@ export default function ExecutionZoneRouter({ contract, onSync }: ExecutionZoneR
 
   if (!contract) {
     return (
-      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
         <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
-        <div className="relative z-10">
+
+        {/* Fixed Header */}
+        <div className="relative z-10 p-4 md:p-6 shrink-0">
+          <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+            Execution Zone
+          </h2>
+        </div>
+
+        {/* Centered Message */}
+        <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
           <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-12 text-center">
-            <h2 className="font-headline text-2xl uppercase mb-4">Execution Zone</h2>
             <p className="font-display font-bold text-black">
               SELECT A CONTRACT TO VIEW DETAILS
             </p>
@@ -36,12 +44,18 @@ export default function ExecutionZoneRouter({ contract, onSync }: ExecutionZoneR
   if ('tenant' in contract && !('template_id' in contract)) {
     // Legacy rental contract - show original ExecutionZone
     return (
-      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
         <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
-        <h2 className="font-headline text-2xl uppercase tracking-tighter absolute top-4 left-4 md:left-8 z-10 bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000]">
-          Execution Zone
-        </h2>
-        <div className="relative z-10">
+
+        {/* Fixed Header */}
+        <div className="relative z-10 p-4 md:p-6 shrink-0">
+          <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+            Execution Zone
+          </h2>
+        </div>
+
+        {/* Centered Message */}
+        <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
           <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-8 text-center">
             <h3 className="font-headline text-xl uppercase mb-2">Legacy Rental Contract</h3>
             <p className="font-display text-sm text-gray-600">
@@ -56,9 +70,18 @@ export default function ExecutionZoneRouter({ contract, onSync }: ExecutionZoneR
   // Generic contract with template_id
   if (!address) {
     return (
-      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+      <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
         <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
-        <div className="relative z-10">
+
+        {/* Fixed Header */}
+        <div className="relative z-10 p-4 md:p-6 shrink-0">
+          <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+            Execution Zone
+          </h2>
+        </div>
+
+        {/* Centered Message */}
+        <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
           <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-8 text-center">
             <h3 className="font-headline text-xl uppercase mb-2">Wallet Not Connected</h3>
             <p className="font-display text-sm text-gray-600">
@@ -85,9 +108,18 @@ export default function ExecutionZoneRouter({ contract, onSync }: ExecutionZoneR
 
     default:
       return (
-        <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+        <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
           <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
-          <div className="relative z-10">
+
+          {/* Fixed Header */}
+          <div className="relative z-10 p-4 md:p-6 shrink-0">
+            <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+              Execution Zone
+            </h2>
+          </div>
+
+          {/* Centered Message */}
+          <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
             <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-8 text-center">
               <h3 className="font-headline text-xl uppercase mb-2">Unknown Template</h3>
               <p className="font-display text-sm text-gray-600">

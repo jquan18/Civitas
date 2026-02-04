@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
 import { GenericContractCard } from './GenericContractCard';
-import { Send } from 'lucide-react';
 import type { ContractTemplate } from '@/lib/contracts/constants';
 
 interface GenericContract {
@@ -39,7 +37,6 @@ export default function CommandZone({
   selectedContract,
   loading = false
 }: CommandZoneProps) {
-  const [inputValue, setInputValue] = useState('');
 
   const totalContracts = rentalContracts.length + genericContracts.length;
 
@@ -49,7 +46,7 @@ export default function CommandZone({
       <div className="p-4 border-b-4 border-black bg-stark-white flex justify-between items-center shrink-0">
         <h2 className="font-headline text-2xl uppercase tracking-tighter">Command Zone</h2>
         <div className="flex gap-2 items-center">
-          <span className="text-xs font-display font-bold bg-void-black text-acid-lime px-2 py-1 border border-acid-lime">
+          <span className="text-xs font-display font-bold bg-acid-lime text-void-black px-2 py-1 border-2 border-black shadow-[2px_2px_0px_#000]">
             {totalContracts} CONTRACT{totalContracts !== 1 ? 'S' : ''}
           </span>
           <span className="w-3 h-3 bg-red-500 border-2 border-black"></span>
@@ -88,7 +85,7 @@ export default function CommandZone({
         ) : (
           <>
             <div className="text-center mb-4">
-              <span className="bg-void-black text-stark-white px-3 py-1 text-xs font-display font-bold uppercase border-2 border-black">
+              <span className="bg-acid-lime text-void-black px-3 py-1 text-xs font-display font-bold uppercase border-2 border-black shadow-[2px_2px_0px_#000]">
                 --- Connected to Secure Channel #ALPHA ---
               </span>
             </div>
@@ -112,28 +109,6 @@ export default function CommandZone({
             )}
           </>
         )}
-      </div>
-
-      {/* Input Bar */}
-      <div className="p-4 bg-stark-white border-t-4 border-black shrink-0">
-        <div className="relative flex items-end gap-3">
-          <div className="relative flex-grow">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-headline text-hot-pink text-xl">
-              &gt;
-            </span>
-            <input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              className="w-full bg-paper-cream border-2 border-black h-16 pl-10 pr-4 font-display text-lg focus:ring-0 focus:outline-none focus:shadow-[4px_4px_0px_#000] transition-shadow placeholder:text-gray-400"
-              placeholder="Type command..."
-              type="text"
-            />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-6 bg-black animate-blink"></div>
-          </div>
-          <button className="w-16 h-16 bg-acid-lime border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:translate-y-[2px] hover:translate-x-[2px] transition-all flex items-center justify-center shrink-0 active:translate-y-[4px] active:translate-x-[4px] active:shadow-none group">
-            <Send className="text-black text-3xl w-8 h-8 group-hover:scale-110 transition-transform" />
-          </button>
-        </div>
       </div>
     </div>
   );

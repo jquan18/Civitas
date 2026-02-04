@@ -87,24 +87,30 @@ export default function RecipientView({ contract, userAddress, onSync }: Recipie
   };
 
   return (
-    <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col items-center justify-center p-8 relative overflow-y-auto">
+    <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
+      {/* Pattern Grid Background */}
       <div className="absolute inset-0 pattern-grid pointer-events-none z-0"></div>
 
-      <h2 className="font-headline text-2xl uppercase tracking-tighter absolute top-4 left-4 md:left-8 z-10 bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000]">
-        Execution Zone
-      </h2>
+      {/* Fixed Header (outside scroll area) */}
+      <div className="relative z-10 p-4 md:p-6 shrink-0 flex justify-between items-center">
+        <h2 className="font-headline text-2xl uppercase tracking-tighter bg-stark-white px-3 py-1 border-2 border-black shadow-[4px_4px_0px_#000] inline-block">
+          Execution Zone
+        </h2>
 
-      {/* Debug Refresh Button */}
-      <button
-        onClick={() => refetch()}
-        className="absolute top-4 right-4 z-10 px-3 py-1 border-2 border-black bg-warning-yellow font-bold text-xs hover:bg-yellow-300"
-      >
-        🔄 Force Refresh
-      </button>
+        {/* Debug Refresh Button */}
+        <button
+          onClick={() => refetch()}
+          className="px-3 py-1 border-2 border-black bg-warning-yellow font-bold text-xs hover:bg-yellow-300"
+        >
+          🔄 Force Refresh
+        </button>
+      </div>
 
-      {/* Recipient Card */}
-      <div className="w-full max-w-md relative z-10 mb-8">
-        <TornPaperCard className={`transform rotate-1 ${canClaim ? 'ring-4 ring-acid-lime ring-offset-4 animate-pulse' : ''}`}>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+        {/* Recipient Card */}
+        <div className="w-full max-w-md relative z-10 mb-8">
+          <TornPaperCard className={`${canClaim ? 'ring-4 ring-acid-lime ring-offset-4 animate-pulse' : ''}`}>
           <div className="flex flex-col gap-6">
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-black border-dashed pb-4">
@@ -237,6 +243,7 @@ export default function RecipientView({ contract, userAddress, onSync }: Recipie
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
