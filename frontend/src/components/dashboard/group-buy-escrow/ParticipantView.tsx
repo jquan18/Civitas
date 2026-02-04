@@ -7,9 +7,10 @@ import { useWriteContract, useReadContract } from 'wagmi';
 import type { AllContracts } from '@/app/dashboard/page';
 import TornPaperCard from '@/components/ui/TornPaperCard';
 import TactileButton from '@/components/ui/TactileButton';
-import { Wallet, ThumbsUp, RefreshCw, Clock } from 'lucide-react';
+import { Wallet, ThumbsUp, RefreshCw, Clock, Shield, ExternalLink } from 'lucide-react';
 import { GROUP_BUY_ESCROW_ABI, ERC20_ABI } from '@/lib/contracts/abis';
-import { BASE_USDC_ADDRESS } from '@/lib/contracts/constants';
+import { BASE_USDC_ADDRESS, CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import Link from 'next/link';
 
 interface ParticipantViewProps {
   contract: AllContracts;
@@ -242,6 +243,27 @@ export default function ParticipantView({ contract, userAddress, onSync }: Parti
                 </div>
               </div>
             </div>
+
+            {/* ENS Name Badge */}
+            {contract.basename && (
+              <Link
+                href={`/verify?name=${contract.basename}.${CIVITAS_ENS_DOMAIN}`}
+                className="bg-acid-lime p-3 border-2 border-black flex items-center justify-between gap-2 overflow-hidden hover:bg-lime-300 transition-colors group"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Shield className="w-4 h-4 text-void-black shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <span className="font-mono text-sm text-void-black truncate block">
+                      {contract.basename}.{CIVITAS_ENS_DOMAIN}
+                    </span>
+                    <span className="font-mono text-xs text-void-black/60">
+                      View Contract on ENS →
+                    </span>
+                  </div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-void-black shrink-0 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            )}
 
             {/* Stage Indicator */}
             <div className="flex justify-between items-center">

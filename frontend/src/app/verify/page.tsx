@@ -226,12 +226,12 @@ function VerifyPageContent() {
         <MarqueeTicker />
 
         {/* Header */}
-        <div className="bg-void-black text-white border-b-4 border-black p-6 shrink-0">
+        <div className="bg-acid-lime border-b-4 border-black px-6 py-3 shrink-0">
           <div className="max-w-3xl">
-            <h1 className="font-display font-bold text-3xl uppercase tracking-tight">
+            <h1 className="font-display font-bold text-xl uppercase tracking-tight text-void-black">
               Verify Contract
             </h1>
-            <p className="font-mono text-sm text-gray-400 mt-1">
+            <p className="font-mono text-xs text-void-black/60">
               Look up any Civitas contract by ENS name or address
             </p>
           </div>
