@@ -13,8 +13,9 @@ import { TerminalInput } from '@/components/ui/TerminalInput';
 import { LoadingSquares } from '@/components/ui/LoadingSquares';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
-import { transformConfigToDeployParams, validateConfig } from '@/lib/contracts/config-transformer';
+import { transformConfigToDeployParams, validateConfig, resolveConfigENSNames, type ENSResolutionReport } from '@/lib/contracts/config-transformer';
 import { CONTRACT_TEMPLATES, CIVITAS_ENS_DOMAIN, type ContractTemplate } from '@/lib/contracts/constants';
+import { isENSName, formatAddress } from '@/lib/ens/resolver';
 
 export default function CreatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,6 +48,8 @@ export default function CreatePage() {
   } = useCivitasContractDeploy();
 
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
+  const [ensResolutionReport, setEnsResolutionReport] = useState<ENSResolutionReport | null>(null);
+  const [isResolvingENS, setIsResolvingENS] = useState(false);
 
   const allTemplates = templateRegistry.getAll();
 
@@ -73,9 +76,23 @@ export default function CreatePage() {
 
     try {
       setDeploymentError(null);
+      setEnsResolutionReport(null);
 
-      // Transform config to deployment params
-      const params = transformConfigToDeployParams(activeTemplate.id, extractedConfig);
+      // Step 1: Resolve any ENS names in the config
+      setIsResolvingENS(true);
+      const resolutionReport = await resolveConfigENSNames(activeTemplate.id, extractedConfig);
+      setIsResolvingENS(false);
+      setEnsResolutionReport(resolutionReport);
+
+      if (!resolutionReport.success) {
+        setDeploymentError(
+          `ENS Resolution Failed:\n${resolutionReport.errors.join('\n')}\n\nPlease use valid ENS names or raw Ethereum addresses (0x...).`
+        );
+        return;
+      }
+
+      // Transform resolved config to deployment params
+      const params = transformConfigToDeployParams(activeTemplate.id, resolutionReport.resolvedConfig);
 
       // Map template ID to CONTRACT_TEMPLATES constant
       let templateConstant: ContractTemplate;
@@ -281,6 +298,42 @@ export default function CreatePage() {
                   <StatusBanner variant="error">
                     Transaction failed: {deployError.message}
                   </StatusBanner>
+                </div>
+              )}
+
+              {/* ENS Resolution Status */}
+              {isResolvingENS && (
+                <div className="mt-4">
+                  <StatusBanner variant="info">
+                    Resolving ENS names...
+                  </StatusBanner>
+                </div>
+              )}
+
+              {ensResolutionReport && ensResolutionReport.success && ensResolutionReport.resolutions.size > 0 && (
+                <div className="mt-4">
+                  <div className="bg-white border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
+                    <p className="font-mono text-xs uppercase font-bold opacity-60 mb-2">Resolved Addresses</p>
+                    <div className="space-y-1">
+                      {Array.from(ensResolutionReport.resolutions.entries()).map(([input, result]) => (
+                        <div key={input} className="font-mono text-sm flex items-center gap-2">
+                          {isENSName(input) ? (
+                            <>
+                              <span className="text-void-black">{input}</span>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-green-600">{formatAddress(result.address || '')}</span>
+                              <span className="text-green-500">✓</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-gray-500">{formatAddress(input)}</span>
+                              <span className="text-gray-400">(raw)</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 

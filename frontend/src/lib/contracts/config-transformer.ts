@@ -1,14 +1,163 @@
 import { parseUnits } from 'viem';
-import type { 
+import type {
   RentVaultParams,
   GroupBuyEscrowParams,
   StableAllowanceTreasuryParams,
 } from '@/hooks/useCivitasContractDeploy';
-import type { 
+import type {
   RentVaultConfig,
   GroupBuyEscrowConfig,
   StableAllowanceTreasuryConfig,
 } from '@/lib/ai/schemas';
+import {
+  batchResolveENS,
+  isAddress,
+  isENSName,
+  type ENSResolutionResult
+} from '@/lib/ens/resolver';
+
+/**
+ * Result of resolving all ENS names in a config
+ */
+export interface ENSResolutionReport {
+  success: boolean;
+  resolvedConfig: any;
+  resolutions: Map<string, ENSResolutionResult>;
+  errors: string[];
+}
+
+/**
+ * Extract all address/ENS fields from a config that need resolution
+ */
+function extractAddressFields(templateId: string, config: any): string[] {
+  const fields: string[] = [];
+
+  switch (templateId) {
+    case 'rent-vault': {
+      const c = config as RentVaultConfig;
+      if (c.recipient) fields.push(c.recipient);
+      if (c.tenants) fields.push(...c.tenants);
+      break;
+    }
+    case 'group-buy-escrow': {
+      const c = config as GroupBuyEscrowConfig;
+      if (c.recipient) fields.push(c.recipient);
+      if (c.participants) fields.push(...c.participants);
+      break;
+    }
+    case 'stable-allowance-treasury': {
+      const c = config as StableAllowanceTreasuryConfig;
+      if (c.owner) fields.push(c.owner);
+      if (c.recipient) fields.push(c.recipient);
+      break;
+    }
+  }
+
+  return fields;
+}
+
+/**
+ * Resolve all ENS names in a config and return resolved config + report
+ */
+export async function resolveConfigENSNames(
+  templateId: string,
+  config: any
+): Promise<ENSResolutionReport> {
+  const addressFields = extractAddressFields(templateId, config);
+  const errors: string[] = [];
+
+  // Filter to only ENS names (addresses don't need resolution)
+  const ensNames = addressFields.filter(f => isENSName(f));
+  const rawAddresses = addressFields.filter(f => isAddress(f));
+
+  // If no ENS names, return config as-is
+  if (ensNames.length === 0) {
+    const resolutions = new Map<string, ENSResolutionResult>();
+    rawAddresses.forEach(addr => {
+      resolutions.set(addr, {
+        address: addr as `0x${string}`,
+        source: 'raw',
+        originalInput: addr,
+      });
+    });
+
+    return {
+      success: true,
+      resolvedConfig: config,
+      resolutions,
+      errors: [],
+    };
+  }
+
+  // Batch resolve all ENS names
+  const resolutions = await batchResolveENS([...ensNames, ...rawAddresses]);
+
+  // Check for resolution failures
+  for (const [input, result] of resolutions) {
+    if (!result.address && isENSName(input)) {
+      errors.push(`Failed to resolve "${input}": ${result.error || 'Unknown error'}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return {
+      success: false,
+      resolvedConfig: config,
+      resolutions,
+      errors,
+    };
+  }
+
+  // Create resolved config by replacing ENS names with addresses
+  const resolvedConfig = JSON.parse(JSON.stringify(config));
+
+  switch (templateId) {
+    case 'rent-vault': {
+      if (resolvedConfig.recipient) {
+        const result = resolutions.get(resolvedConfig.recipient);
+        if (result?.address) resolvedConfig.recipient = result.address;
+      }
+      if (resolvedConfig.tenants) {
+        resolvedConfig.tenants = resolvedConfig.tenants.map((t: string) => {
+          const result = resolutions.get(t);
+          return result?.address || t;
+        });
+      }
+      break;
+    }
+    case 'group-buy-escrow': {
+      if (resolvedConfig.recipient) {
+        const result = resolutions.get(resolvedConfig.recipient);
+        if (result?.address) resolvedConfig.recipient = result.address;
+      }
+      if (resolvedConfig.participants) {
+        resolvedConfig.participants = resolvedConfig.participants.map((p: string) => {
+          const result = resolutions.get(p);
+          return result?.address || p;
+        });
+      }
+      break;
+    }
+    case 'stable-allowance-treasury': {
+      if (resolvedConfig.owner) {
+        const result = resolutions.get(resolvedConfig.owner);
+        if (result?.address) resolvedConfig.owner = result.address;
+      }
+      if (resolvedConfig.recipient) {
+        const result = resolutions.get(resolvedConfig.recipient);
+        if (result?.address) resolvedConfig.recipient = result.address;
+      }
+      break;
+    }
+  }
+
+  return {
+    success: true,
+    resolvedConfig,
+    resolutions,
+    errors: [],
+  };
+}
 
 /**
  * Parse a date string to BigInt Unix timestamp
