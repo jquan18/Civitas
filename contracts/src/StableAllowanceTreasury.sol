@@ -197,4 +197,110 @@ contract StableAllowanceTreasury is Initializable {
     receive() external payable {
         revert("Use deposit() function for USDC");
     }
+
+    // ─── ENS Metadata ─────────────────────────────────────────────────────────
+
+    /**
+     * @notice Returns ENS metadata for this contract
+     * @dev Used by backend to automatically populate ENS text records
+     * @return contractType The template type
+     * @return status The current contract status
+     * @return keys Array of ENS text record keys
+     * @return values Array of ENS text record values
+     */
+    function getENSMetadata() external view returns (
+        string memory contractType,
+        string memory status,
+        string[] memory keys,
+        string[] memory values
+    ) {
+        contractType = "StableAllowanceTreasury";
+
+        // Determine status string
+        if (state == State.Active) {
+            status = "Active";
+        } else if (state == State.Paused) {
+            status = "Paused";
+        } else {
+            status = "Terminated";
+        }
+
+        // Build metadata arrays (13 fields)
+        keys = new string[](13);
+        values = new string[](13);
+
+        keys[0] = "contract.type";
+        values[0] = "StableAllowanceTreasury";
+
+        keys[1] = "contract.status";
+        values[1] = status;
+
+        keys[2] = "contract.version";
+        values[2] = "1.0.0";
+
+        keys[3] = "contract.treasury.allowancePerIncrement";
+        values[3] = _uint2str(allowancePerIncrement);
+
+        keys[4] = "contract.treasury.approvalCounter";
+        values[4] = _uint2str(approvalCounter);
+
+        keys[5] = "contract.treasury.claimedCount";
+        values[5] = _uint2str(claimedCount);
+
+        keys[6] = "contract.treasury.unclaimedCount";
+        values[6] = _uint2str(approvalCounter > claimedCount ? approvalCounter - claimedCount : 0);
+
+        keys[7] = "contract.treasury.balance";
+        values[7] = _uint2str(USDC.balanceOf(address(this)));
+
+        keys[8] = "contract.treasury.currency";
+        values[8] = "USDC";
+
+        keys[9] = "contract.treasury.currencyAddress";
+        values[9] = _address2str(address(USDC));
+
+        keys[10] = "contract.owner";
+        values[10] = _address2str(owner);
+
+        keys[11] = "contract.recipient";
+        values[11] = _address2str(recipient);
+
+        keys[12] = "legal.type";
+        values[12] = "treasury_agreement";
+    }
+
+    // ─── Internal Helpers ─────────────────────────────────────────────────────
+
+    function _uint2str(uint256 _i) internal pure returns (string memory str) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(length);
+        uint256 k = length;
+        j = _i;
+        while (j != 0) {
+            bstr[--k] = bytes1(uint8(48 + j % 10));
+            j /= 10;
+        }
+        str = string(bstr);
+    }
+
+    function _address2str(address _addr) internal pure returns (string memory) {
+        bytes32 value = bytes32(uint256(uint160(_addr)));
+        bytes memory alphabet = "0123456789abcdef";
+        bytes memory str = new bytes(42);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint256 i = 0; i < 20; i++) {
+            str[2+i*2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3+i*2] = alphabet[uint8(value[i + 12] & 0x0f)];
+        }
+        return string(str);
+    }
 }

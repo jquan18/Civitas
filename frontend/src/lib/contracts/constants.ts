@@ -12,22 +12,22 @@ export const DEFAULT_CHAIN = baseSepolia; // Using testnet as default
 // ============================================================================
 
 export const CIVITAS_FACTORY_ADDRESS: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56',
+  [baseSepolia.id]: '0x1cF969a2D882A09927f051D4F8e9e31160Abe894',
   [base.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56', // TODO: Update when deployed to mainnet
 };
 
 export const RENT_VAULT_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x98EB94D9948c9CedeCeaB4e3E4aDEbb199F9faf7',
+  [baseSepolia.id]: '0x9F88C58521693d0A02554C0b079aFf679DAB261E',
   [base.id]: '0x98EB94D9948c9CedeCeaB4e3E4aDEbb199F9faf7', // TODO: Update when deployed to mainnet
 };
 
 export const GROUP_BUY_ESCROW_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x43066b4557cCfa5a25f77f151a871Dd591C0f2F5',
+  [baseSepolia.id]: '0x7107651cD170931EA3caF552299CEA49D7EC7a6E',
   [base.id]: '0x43066b4557cCfa5a25f77f151a871Dd591C0f2F5', // TODO: Update when deployed to mainnet
 };
 
 export const STABLE_ALLOWANCE_TREASURY_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x86CCC5d79bF369FC38d2210138007b66D4Dd8433',
+  [baseSepolia.id]: '0x1d71697D9420f218e75cC2ceb70C255BE1B62550',
   [base.id]: '0x86CCC5d79bF369FC38d2210138007b66D4Dd8433', // TODO: Update when deployed to mainnet
 };
 

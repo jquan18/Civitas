@@ -140,4 +140,119 @@ contract RentVault is Initializable {
     function isRecipient(address account) external view returns (bool) {
         return account == recipient;
     }
+
+    // ─── ENS Metadata ─────────────────────────────────────────────────────────
+
+    /**
+     * @notice Returns ENS metadata for this contract
+     * @dev Used by backend to automatically populate ENS text records
+     * @return contractType The template type
+     * @return status The current contract status
+     * @return keys Array of ENS text record keys
+     * @return values Array of ENS text record values
+     */
+    function getENSMetadata() external view returns (
+        string memory contractType,
+        string memory status,
+        string[] memory keys,
+        string[] memory values
+    ) {
+        contractType = "RentVault";
+
+        // Determine status
+        if (withdrawn) {
+            status = "Completed";
+        } else if (totalDeposited == rentAmount) {
+            status = "Funded";
+        } else if (block.timestamp > dueDate) {
+            status = "Expired";
+        } else {
+            status = "Pending";
+        }
+
+        // Build metadata arrays (11 fields)
+        keys = new string[](11);
+        values = new string[](11);
+
+        keys[0] = "contract.type";
+        values[0] = "RentVault";
+
+        keys[1] = "contract.status";
+        values[1] = status;
+
+        keys[2] = "contract.version";
+        values[2] = "1.0.0";
+
+        keys[3] = "contract.rent.amount";
+        values[3] = _uint2str(rentAmount);
+
+        keys[4] = "contract.rent.dueDate";
+        values[4] = _uint2str(dueDate);
+
+        keys[5] = "contract.rent.totalDeposited";
+        values[5] = _uint2str(totalDeposited);
+
+        keys[6] = "contract.rent.withdrawn";
+        values[6] = withdrawn ? "true" : "false";
+
+        keys[7] = "contract.rent.currency";
+        values[7] = "USDC";
+
+        keys[8] = "contract.rent.currencyAddress";
+        values[8] = _address2str(address(USDC));
+
+        keys[9] = "contract.recipient";
+        values[9] = _address2str(recipient);
+
+        keys[10] = "legal.type";
+        values[10] = "rental_agreement";
+    }
+
+    /**
+     * @notice Get all tenant addresses
+     * @dev Helper function to build participant list for ENS
+     * @return Array of tenant addresses (caller must filter by isTenant mapping)
+     */
+    function getTenantAddresses() external view returns (address[] memory) {
+        // Note: Since we don't store an array of tenants, the backend should
+        // call this via events or maintain its own list
+        // This is a placeholder - backend should track tenants from initialization
+        address[] memory empty;
+        return empty;
+    }
+
+    // ─── Internal Helpers ─────────────────────────────────────────────────────
+
+    function _uint2str(uint256 _i) internal pure returns (string memory str) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(length);
+        uint256 k = length;
+        j = _i;
+        while (j != 0) {
+            bstr[--k] = bytes1(uint8(48 + j % 10));
+            j /= 10;
+        }
+        str = string(bstr);
+    }
+
+    function _address2str(address _addr) internal pure returns (string memory) {
+        bytes32 value = bytes32(uint256(uint160(_addr)));
+        bytes memory alphabet = "0123456789abcdef";
+        bytes memory str = new bytes(42);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint256 i = 0; i < 20; i++) {
+            str[2+i*2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3+i*2] = alphabet[uint8(value[i + 12] & 0x0f)];
+        }
+        return string(str);
+    }
 }
