@@ -15,7 +15,9 @@ interface PendingDeployment {
 const PENDING_KEY = 'civitas_pending_deployment';
 
 function persistPendingDeployment(data: PendingDeployment) {
-  localStorage.setItem(PENDING_KEY, JSON.stringify(data));
+  localStorage.setItem(PENDING_KEY, JSON.stringify(data, (_, v) =>
+    typeof v === 'bigint' ? v.toString() : v
+  ));
 }
 
 function clearPendingDeployment() {
