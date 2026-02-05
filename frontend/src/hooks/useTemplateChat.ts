@@ -1,11 +1,17 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { templateRegistry } from '@/lib/templates/registry';
 import type { TemplateDefinition } from '@/lib/templates/types';
 import { useUserTimezone } from './useUserTimezone';
+
+// Define message type
+type Message = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+};
 
 export function useTemplateChat() {
   const [detectedTemplate, setDetectedTemplate] = useState<TemplateDefinition | null>(null);
@@ -14,40 +20,21 @@ export function useTemplateChat() {
   const [configCompleteness, setConfigCompleteness] = useState(0);
   const [isExtracting, setIsExtracting] = useState(false);
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Detect user's timezone from browser
   const timezone = useUserTimezone();
-  
+
   // Get connected wallet address
   const { address: walletAddress } = useAccount();
 
   // Active template is manual selection or AI detection
   const activeTemplate = manualTemplate || detectedTemplate;
 
-  const { messages, setMessages, status } = useChat({
-    api: '/api/chat',
-    body: {
-      templateId: activeTemplate?.id,
-      timezone, // Pass timezone to API
-      walletAddress, // Pass connected wallet address
-    },
-  });
-
-  const isLoading = status !== 'ready';
-
   // Helper to extract text from message content
-  const getMessageText = (message: typeof messages[number]) => {
-    if (typeof message.content === 'string') {
-      return message.content;
-    }
-    // Handle array of content parts
-    if (Array.isArray(message.content)) {
-      return message.content
-        .filter(part => part.type === 'text')
-        .map(part => part.text)
-        .join(' ');
-    }
-    return '';
+  const getMessageText = (message: Message) => {
+    return message.content;
   };
 
   // Auto-detect template from first user message

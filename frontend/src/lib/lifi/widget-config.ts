@@ -28,7 +28,7 @@ export function createWidgetConfig({
     // This ensures bridged funds go directly to the deployed contract
     toChain: chainId,
     toToken: usdcAddress,
-    toAddress: destinationAddress,
+    toAddress: destinationAddress as any, // Type assertion needed for LI.FI widget compatibility
 
     // Lock the amount to match contract requirements
     toAmount: amount.toString(),
@@ -54,5 +54,5 @@ export function createWidgetConfig({
 
     // Build settings
     buildSwapUrl: true,
-  };
+  } as WidgetConfig;
 }

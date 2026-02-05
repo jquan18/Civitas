@@ -56,11 +56,6 @@ export default function CreatePage() {
   const [ensResolutionReport, setEnsResolutionReport] = useState<ENSResolutionReport | null>(null);
   const [isResolvingENS, setIsResolvingENS] = useState(false);
 
-  // LI.FI Funding state
-  const [fundingStep, setFundingStep] = useState<'idle' | 'funding' | 'polling' | 'funded'>('idle');
-  const [fundingError, setFundingError] = useState<string | null>(null);
-  const isMainnet = isLiFiSupported(chainId);
-
   const allTemplates = templateRegistry.getAll();
 
   // Auto-scroll to bottom when messages change
@@ -129,40 +124,6 @@ export default function CreatePage() {
   };
 
   const isDeploying = isPending || isConfirming;
-
-  // Calculate required funding amount from config (default to 0 if not available)
-  const getRequiredFunding = useCallback((): bigint => {
-    if (!extractedConfig) return BigInt(0);
-    // Try to get total amount from config based on template
-    const config = extractedConfig as Record<string, unknown>;
-    if (config.monthlyAmount && config.totalMonths) {
-      return BigInt(Number(config.monthlyAmount) * Number(config.totalMonths) * 1e6);
-    }
-    if (config.targetAmount) {
-      return BigInt(Number(config.targetAmount) * 1e6);
-    }
-    if (config.totalBudget) {
-      return BigInt(Number(config.totalBudget) * 1e6);
-    }
-    return BigInt(0);
-  }, [extractedConfig]);
-
-  const handleStartFunding = () => {
-    setFundingStep('funding');
-    setFundingError(null);
-  };
-
-  const handleFundingCompleted = () => {
-    setFundingStep('polling');
-  };
-
-  const handleContractFunded = () => {
-    setFundingStep('funded');
-  };
-
-  const handleFundingError = (error: Error) => {
-    setFundingError(error.message);
-  };
 
   return (
     <WalletGate
@@ -426,111 +387,26 @@ export default function CreatePage() {
                   </div>
                 )}
 
-                {/* LI.FI Funding Section - Shows after successful deployment */}
-                {isSuccess && deployedAddress && fundingStep === 'idle' && getRequiredFunding() > 0 && (
+                {/* Deployment Success - Redirect to Dashboard */}
+                {isSuccess && deployedAddress && (
                   <div className="mt-6">
-                    <div className="bg-white border-[3px] border-black p-6 shadow-[4px_4px_0px_#000]">
-                      <h3 className="font-headline text-xl uppercase mb-4">Fund Your Contract</h3>
-                      <p className="font-display text-sm text-gray-600 mb-4">
-                        Your contract is deployed! Now fund it with USDC {isMainnet ? 'from any chain using LI.FI' : 'via direct transfer'}.
-                      </p>
-                      <div className="bg-gray-100 p-3 rounded mb-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Required Amount</span>
-                          <span className="font-mono font-bold">{(Number(getRequiredFunding()) / 1e6).toLocaleString()} USDC</span>
-                        </div>
-                        <div className="flex justify-between text-sm mt-1">
-                          <span className="text-gray-500">Contract</span>
-                          <code className="text-xs">{deployedAddress.slice(0, 10)}...{deployedAddress.slice(-8)}</code>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleStartFunding}
-                        className="w-full bg-black text-white font-mono uppercase py-3 border-[3px] border-black hover:bg-gray-800 transition-colors"
-                      >
-                        {isMainnet ? 'Bridge & Fund with LI.FI' : 'Fund Contract'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* LI.FI Funding Widget */}
-                {isSuccess && deployedAddress && fundingStep === 'funding' && (
-                  <div className="mt-6">
-                    <div className="bg-white border-[3px] border-black p-6 shadow-[4px_4px_0px_#000]">
-                      <h3 className="font-headline text-xl uppercase mb-4">
-                        {isMainnet ? 'Bridge & Swap via LI.FI' : 'Transfer USDC'}
-                      </h3>
-
-                      {fundingError && (
-                        <div className="mb-4">
-                          <StatusBanner variant="error" onDismiss={() => setFundingError(null)}>
-                            {fundingError}
-                          </StatusBanner>
-                        </div>
-                      )}
-
-                      {isMainnet ? (
-                        <LiFiBridgeStep
-                          destinationAddress={deployedAddress}
-                          amount={getRequiredFunding()}
-                          onBridgeStarted={(hash) => console.log('Bridge tx:', hash)}
-                          onBridgeCompleted={handleFundingCompleted}
-                          onError={handleFundingError}
-                        />
-                      ) : (
-                        <DirectFundingStep
-                          destinationAddress={deployedAddress}
-                          amount={getRequiredFunding()}
-                          chainId={chainId}
-                          onTransferCompleted={handleFundingCompleted}
-                          onError={handleFundingError}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Balance Polling */}
-                {isSuccess && deployedAddress && fundingStep === 'polling' && (
-                  <div className="mt-6">
-                    <div className="bg-white border-[3px] border-black p-6 shadow-[4px_4px_0px_#000]">
-                      <h3 className="font-headline text-xl uppercase mb-4">Waiting for Funds</h3>
-                      <p className="font-display text-sm text-gray-600 mb-4">
-                        {isMainnet
-                          ? 'Bridge transaction submitted! Waiting for funds to arrive...'
-                          : 'Transfer submitted! Waiting for confirmation...'}
-                      </p>
-                      <BalancePoller
-                        contractAddress={deployedAddress}
-                        requiredAmount={getRequiredFunding()}
-                        chainId={isMainnet ? LIFI_SUPPORTED_CHAIN_IDS.BASE_MAINNET : chainId}
-                        onFunded={handleContractFunded}
-                      />
-                      {isMainnet && (
-                        <p className="text-xs text-gray-500 text-center mt-4">
-                          Cross-chain transfers typically take 1-5 minutes
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Funding Complete */}
-                {isSuccess && deployedAddress && fundingStep === 'funded' && (
-                  <div className="mt-6">
-                    <div className="bg-[#CCFF00] border-[3px] border-black p-6 shadow-[4px_4px_0px_#000]">
+                    <div className="bg-acid-lime border-[3px] border-black p-6 shadow-[4px_4px_0px_#000]">
                       <div className="text-center">
-                        <div className="text-4xl mb-2">✓</div>
-                        <h3 className="font-headline text-xl uppercase mb-2">Contract Funded!</h3>
-                        <p className="font-display text-sm">
-                          Your contract is now active and ready to use.
+                        <div className="text-6xl mb-4">✓</div>
+                        <h3 className="font-headline text-2xl uppercase mb-2">Contract Deployed!</h3>
+                        <p className="font-display text-sm mb-4">
+                          Your contract is ready. Go to the dashboard to fund it.
                         </p>
+                        <div className="bg-gray-100 border-[2px] border-black p-3 mb-4">
+                          <p className="font-mono text-xs break-all">
+                            {deployedAddress}
+                          </p>
+                        </div>
                         <a
-                          href={`/contracts/${deployedAddress}`}
-                          className="inline-block mt-4 bg-black text-white font-mono uppercase px-6 py-2 border-[3px] border-black hover:bg-gray-800 transition-colors"
+                          href="/dashboard"
+                          className="inline-block bg-black text-white font-mono uppercase px-6 py-3 border-[3px] border-black hover:bg-gray-800 transition-colors"
                         >
-                          View Contract
+                          Go to Dashboard
                         </a>
                       </div>
                     </div>

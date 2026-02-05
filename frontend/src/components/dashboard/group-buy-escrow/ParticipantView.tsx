@@ -11,6 +11,7 @@ import { Wallet, ThumbsUp, RefreshCw, Clock, Shield, ExternalLink } from 'lucide
 import { GROUP_BUY_ESCROW_ABI, ERC20_ABI } from '@/lib/contracts/abis';
 import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
+import FundingModal from '@/components/dashboard/FundingModal';
 
 interface ParticipantViewProps {
   contract: AllContracts;
@@ -19,8 +20,7 @@ interface ParticipantViewProps {
 }
 
 export default function ParticipantView({ contract, userAddress, onSync }: ParticipantViewProps) {
-  const [depositAmount, setDepositAmount] = useState('');
-  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showFundingModal, setShowFundingModal] = useState(false);
   const chainId = useChainId();
 
   const contractAddress = contract.contract_address as `0x${string}`;
@@ -187,32 +187,6 @@ export default function ParticipantView({ contract, userAddress, onSync }: Parti
     phaseText = 'Delivery';
     phaseColor = 'bg-blue-500';
   }
-
-  // Handle deposit
-  const handleDeposit = async () => {
-    if (!depositAmount || Number(depositAmount) <= 0) return;
-
-    const amount = parseUnits(depositAmount, 6);
-    const currentAllowance = usdcAllowance ? BigInt(usdcAllowance) : 0n;
-
-    if (currentAllowance < amount) {
-      approveUSDC({
-        address: usdcAddress,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [contractAddress, amount],
-      });
-    } else {
-      deposit({
-        address: contractAddress,
-        abi: GROUP_BUY_ESCROW_ABI,
-        functionName: 'deposit',
-        args: [amount],
-      });
-      setShowDepositModal(false);
-      setDepositAmount('');
-    }
-  };
 
   return (
     <div className="w-full md:flex-1 bg-paper-cream h-full flex flex-col relative overflow-hidden">
@@ -411,7 +385,7 @@ export default function ParticipantView({ contract, userAddress, onSync }: Parti
           <TactileButton
             variant="primary"
             className="w-full group"
-            onClick={() => setShowDepositModal(true)}
+            onClick={() => setShowFundingModal(true)}
           >
             <div className="p-2 flex items-center justify-center gap-4">
               <span className="font-headline text-2xl text-void-black uppercase tracking-widest">
@@ -483,70 +457,19 @@ export default function ParticipantView({ contract, userAddress, onSync }: Parti
         )}
       </div>
 
-      {/* Deposit Modal */}
-      {showDepositModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-6 max-w-md w-full">
-            <h3 className="font-headline text-2xl uppercase mb-4">Contribute USDC</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="font-display font-bold text-sm uppercase mb-2 block">
-                  Amount (USDC)
-                </label>
-                <input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full border-2 border-black px-4 py-2 font-mono text-lg"
-                  step="0.01"
-                  min="0"
-                  max={formatUnits(remaining, 6)}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Remaining: {formatUnits(remaining, 6)} USDC
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDepositAmount(formatUnits(remaining / 2n, 6))}
-                  className="flex-1 border-2 border-black px-3 py-1 text-sm font-bold hover:bg-gray-100"
-                >
-                  50%
-                </button>
-                <button
-                  onClick={() => setDepositAmount(formatUnits(remaining, 6))}
-                  className="flex-1 border-2 border-black px-3 py-1 text-sm font-bold hover:bg-gray-100"
-                >
-                  MAX
-                </button>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowDepositModal(false);
-                    setDepositAmount('');
-                  }}
-                  className="flex-1 border-2 border-black px-4 py-2 font-bold hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <TactileButton
-                  variant="primary"
-                  className="flex-1"
-                  onClick={handleDeposit}
-                  disabled={!depositAmount || Number(depositAmount) <= 0}
-                >
-                  <span className="font-bold">Contribute</span>
-                </TactileButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => setShowFundingModal(false)}
+        contractAddress={contractAddress}
+        chainId={chainId}
+        requiredAmount={remaining}
+        onFundingComplete={() => {
+          setShowFundingModal(false);
+          if (onSync) onSync();
+        }}
+        contractType="Group Buy Escrow"
+      />
       </div>
     </div>
   );

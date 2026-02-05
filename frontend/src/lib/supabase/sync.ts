@@ -1,8 +1,8 @@
-import { getUserContracts, updateContract } from './contracts'
+import { getUserContracts, updateGenericContract } from './generic-contracts'
 import { getOrCreateUser } from './users'
 import type { Database } from './types'
 
-type RentalContract = Database['public']['Tables']['rental_contracts']['Row']
+type RentalContract = Database['public']['Tables']['contracts']['Row']
 
 /**
  * Sync contract data from blockchain to Supabase
@@ -28,19 +28,9 @@ export async function syncContractFromBlockchain(
     await getOrCreateUser(blockchainData.tenant)
   }
 
-  // Update contract in database
-  const updated = await updateContract(contractAddress, {
-    landlord_address: blockchainData.landlord,
-    tenant_address: blockchainData.tenant !== '0x0000000000000000000000000000000000000000'
-      ? blockchainData.tenant
-      : null,
-    monthly_amount: Number(blockchainData.monthlyAmount),
-    total_months: blockchainData.totalMonths,
-    start_timestamp: Number(blockchainData.startTimestamp),
+  // Update contract in database using generic contract update
+  const updated = await updateGenericContract(contractAddress, {
     state: blockchainData.state,
-    termination_initiated_at: blockchainData.terminationInitiatedAt > 0n
-      ? Number(blockchainData.terminationInitiatedAt)
-      : null,
   })
 
   return updated

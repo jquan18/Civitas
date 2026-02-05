@@ -50,7 +50,9 @@ export function LiFiBridgeStep({
 
   // Source chain selection (user picks where to bridge from)
   const [fromChainId, setFromChainId] = useState<number>(LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET);
-  const [fromAmount, setFromAmount] = useState<string>('');
+
+  // Convert amount prop (bigint) to USDC string for display
+  const amountInUsdc = formatUnits(amount, 6);
 
   // Configure SDK on mount
   useEffect(() => {
@@ -62,15 +64,20 @@ export function LiFiBridgeStep({
   const toTokenAddress = USDC_ADDRESSES[toChainId];
 
   const sourceChains = [
-    { id: LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET, name: 'Ethereum', token: 'ETH' },
-    { id: LIFI_SUPPORTED_CHAIN_IDS.ARBITRUM_MAINNET, name: 'Arbitrum', token: 'ETH' },
-    { id: LIFI_SUPPORTED_CHAIN_IDS.OPTIMISM_MAINNET, name: 'Optimism', token: 'ETH' },
-    { id: LIFI_SUPPORTED_CHAIN_IDS.POLYGON_MAINNET, name: 'Polygon', token: 'MATIC' },
+    { id: LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET, name: 'Ethereum', nativeToken: 'ETH' },
+    { id: LIFI_SUPPORTED_CHAIN_IDS.ARBITRUM_MAINNET, name: 'Arbitrum', nativeToken: 'ETH' },
+    { id: LIFI_SUPPORTED_CHAIN_IDS.OPTIMISM_MAINNET, name: 'Optimism', nativeToken: 'ETH' },
+    { id: LIFI_SUPPORTED_CHAIN_IDS.POLYGON_MAINNET, name: 'Polygon', nativeToken: 'MATIC' },
   ];
 
   const fetchRoutes = useCallback(async () => {
-    if (!address || !fromAmount) {
-      setError('Please enter an amount');
+    if (!address) {
+      setError('Please connect your wallet');
+      return;
+    }
+
+    if (amount <= 0n) {
+      setError('Invalid amount');
       return;
     }
 
@@ -79,11 +86,17 @@ export function LiFiBridgeStep({
     setRoutes([]);
 
     try {
-      // Use native token (ETH/MATIC) as source
-      const fromTokenAddress = '0x0000000000000000000000000000000000000000';
+      // Use USDC as source token (USDC → USDC bridging only)
+      const fromTokenAddress = USDC_ADDRESSES[fromChainId];
 
-      // Convert amount to wei (18 decimals for native tokens)
-      const fromAmountWei = BigInt(Math.floor(parseFloat(fromAmount) * 1e18)).toString();
+      if (!fromTokenAddress) {
+        setError('USDC not supported on selected chain');
+        setState('error');
+        return;
+      }
+
+      // Use the amount prop directly (already in 6 decimals as bigint)
+      const fromAmountWei = amount.toString();
 
       const routesRequest: RoutesRequest = {
         fromChainId,
@@ -117,7 +130,7 @@ export function LiFiBridgeStep({
       setError(err.message || 'Failed to fetch routes');
       setState('error');
     }
-  }, [address, fromAmount, fromChainId, toChainId, toTokenAddress, destinationAddress]);
+  }, [address, amount, fromChainId, toChainId, toTokenAddress, destinationAddress]);
 
   const executeSelectedRoute = useCallback(async () => {
     if (!selectedRoute) return;
@@ -153,9 +166,19 @@ export function LiFiBridgeStep({
       onBridgeCompleted();
     } catch (err: any) {
       console.error('Bridge execution failed:', err);
-      setError(err.message || 'Bridge execution failed');
+
+      // Detect gas balance errors and provide clear message
+      let errorMessage = err.message || 'Bridge execution failed';
+      if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError')) {
+        const chainInfo = sourceChains.find(c => c.id === fromChainId);
+        const nativeToken = chainInfo?.nativeToken || 'ETH';
+        const chainName = chainInfo?.name || 'source chain';
+        errorMessage = `Insufficient ${nativeToken} for gas fees on ${chainName}. You need a small amount of ${nativeToken} (~$1-2) to pay for transaction fees, even when bridging USDC.`;
+      }
+
+      setError(errorMessage);
       setState('error');
-      onError(new Error(err.message || 'Bridge execution failed'));
+      onError(new Error(errorMessage));
     }
   }, [selectedRoute, onBridgeStarted, onBridgeCompleted, onError]);
 
@@ -189,7 +212,7 @@ export function LiFiBridgeStep({
             >
               {sourceChains.map((chain) => (
                 <option key={chain.id} value={chain.id}>
-                  {chain.name} ({chain.token})
+                  {chain.name} (USDC)
                 </option>
               ))}
             </select>
@@ -197,26 +220,22 @@ export function LiFiBridgeStep({
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Amount ({sourceChains.find((c) => c.id === fromChainId)?.token})
+              Amount (USDC)
             </label>
             <input
-              type="number"
-              value={fromAmount}
-              onChange={(e) => setFromAmount(e.target.value)}
-              placeholder="0.1"
-              step="0.01"
-              min="0"
-              className="w-full p-3 border-2 border-black rounded"
-              disabled={state === 'loading-routes'}
+              type="text"
+              value={amountInUsdc}
+              readOnly
+              className="w-full p-3 border-2 border-black rounded bg-gray-100 cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Required: ~{formatUnits(amount, 6)} USDC on Base
+              This amount will be bridged to Base
             </p>
           </div>
 
           <button
             onClick={fetchRoutes}
-            disabled={state === 'loading-routes' || !fromAmount}
+            disabled={state === 'loading-routes'}
             className="w-full bg-black text-white font-mono uppercase py-3 border-2 border-black hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {state === 'loading-routes' ? (

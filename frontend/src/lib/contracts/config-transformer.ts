@@ -203,15 +203,24 @@ export function transformConfigToDeployParams(
   switch (templateId) {
     case 'rent-vault': {
       const c = config as RentVaultConfig;
-      
+
       // Parse rent amount (could be string with commas or just a number string)
+      if (!c.rentAmount) {
+        throw new Error('Rent amount is required');
+      }
       const rentAmountStr = c.rentAmount.replace(/,/g, '');
       const rentAmount = parseUnits(rentAmountStr, 6);
-      
+
       // Parse due date with validation
+      if (!c.dueDate) {
+        throw new Error('Due date is required');
+      }
       const dueDate = parseDateToBigInt(c.dueDate, 'due date');
-      
+
       // Convert shareBps to bigint array
+      if (!c.shareBps) {
+        throw new Error('Share percentages are required');
+      }
       const shareBps = c.shareBps.map(s => BigInt(s));
       
       return {
@@ -225,15 +234,24 @@ export function transformConfigToDeployParams(
 
     case 'group-buy-escrow': {
       const c = config as GroupBuyEscrowConfig;
-      
+
       // Parse funding goal
+      if (!c.fundingGoal) {
+        throw new Error('Funding goal is required');
+      }
       const fundingGoalStr = c.fundingGoal.replace(/,/g, '');
       const fundingGoal = parseUnits(fundingGoalStr, 6);
-      
+
       // Parse expiry date with validation
+      if (!c.expiryDate) {
+        throw new Error('Expiry date is required');
+      }
       const expiryDate = parseDateToBigInt(c.expiryDate, 'expiry date');
-      
+
       // Parse timelock delay (could be in days, convert to seconds)
+      if (!c.timelockRefundDelay) {
+        throw new Error('Timelock refund delay is required');
+      }
       let timelockRefundDelay: bigint;
       const delayStr = c.timelockRefundDelay.replace(/,/g, '');
       const delayNum = parseFloat(delayStr);
@@ -243,8 +261,11 @@ export function transformConfigToDeployParams(
       } else {
         timelockRefundDelay = BigInt(delayNum);
       }
-      
+
       // Convert shareBps to bigint array
+      if (!c.shareBps) {
+        throw new Error('Share percentages are required');
+      }
       const shareBps = c.shareBps.map(s => BigInt(s));
       
       return {
@@ -259,8 +280,11 @@ export function transformConfigToDeployParams(
 
     case 'stable-allowance-treasury': {
       const c = config as StableAllowanceTreasuryConfig;
-      
+
       // Parse allowance amount
+      if (!c.allowancePerIncrement) {
+        throw new Error('Allowance per increment is required');
+      }
       const allowanceStr = c.allowancePerIncrement.replace(/,/g, '');
       const allowancePerIncrement = parseUnits(allowanceStr, 6);
       

@@ -11,6 +11,7 @@ import { Wallet, Plus, Pause, Play, XCircle, AlertTriangle, Shield, ExternalLink
 import { STABLE_ALLOWANCE_TREASURY_ABI, ERC20_ABI } from '@/lib/contracts/abis';
 import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
+import FundingModal from '@/components/dashboard/FundingModal';
 
 interface OwnerViewProps {
   contract: AllContracts;
@@ -19,9 +20,8 @@ interface OwnerViewProps {
 }
 
 export default function OwnerView({ contract, userAddress, onSync }: OwnerViewProps) {
-  const [depositAmount, setDepositAmount] = useState('');
   const [approvalCount, setApprovalCount] = useState('');
-  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showFundingModal, setShowFundingModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [showStateControls, setShowStateControls] = useState(false);
@@ -83,32 +83,6 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
   // Calculate runway
   const runway = allowancePerIncrement > 0n ? Number(balance / allowancePerIncrement) : 0;
   const isLowBalance = runway < 2;
-
-  // Handle deposit
-  const handleDeposit = async () => {
-    if (!depositAmount || Number(depositAmount) <= 0) return;
-
-    const amount = parseUnits(depositAmount, 6);
-    const currentAllowance = usdcAllowance ? BigInt(usdcAllowance) : 0n;
-
-    if (currentAllowance < amount) {
-      approveUSDC({
-        address: usdcAddress,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [contractAddress, amount],
-      });
-    } else {
-      deposit({
-        address: contractAddress,
-        abi: STABLE_ALLOWANCE_TREASURY_ABI,
-        functionName: 'deposit',
-        args: [amount],
-      });
-      setShowDepositModal(false);
-      setDepositAmount('');
-    }
-  };
 
   // Handle approval increment
   const handleApproval = () => {
@@ -256,7 +230,7 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
         <TactileButton
           variant="primary"
           className="w-full group"
-          onClick={() => setShowDepositModal(true)}
+          onClick={() => setShowFundingModal(true)}
           disabled={state === 2}
         >
           <div className="p-2 flex items-center justify-center gap-3">
@@ -349,56 +323,18 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
         )}
       </div>
 
-      {/* Deposit Modal */}
-      {showDepositModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-6 max-w-md w-full">
-            <h3 className="font-headline text-2xl uppercase mb-4">Fund Treasury</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="font-display font-bold text-sm uppercase mb-2 block">
-                  Amount (USDC)
-                </label>
-                <input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full border-2 border-black px-4 py-2 font-mono text-lg"
-                  step="0.01"
-                  min="0"
-                />
-                {depositAmount && allowancePerIncrement > 0n && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    New runway: +{Math.floor(Number(parseUnits(depositAmount, 6)) / Number(allowancePerIncrement))} claims
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowDepositModal(false);
-                    setDepositAmount('');
-                  }}
-                  className="flex-1 border-2 border-black px-4 py-2 font-bold hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <TactileButton
-                  variant="primary"
-                  className="flex-1"
-                  onClick={handleDeposit}
-                  disabled={!depositAmount || Number(depositAmount) <= 0}
-                >
-                  <span className="font-bold">Deposit</span>
-                </TactileButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => setShowFundingModal(false)}
+        contractAddress={contractAddress}
+        chainId={chainId}
+        onFundingComplete={() => {
+          setShowFundingModal(false);
+          if (onSync) onSync();
+        }}
+        contractType="Treasury"
+      />
 
       {/* Approval Modal */}
       {showApprovalModal && (
