@@ -75,7 +75,13 @@ Fields to extract (leave as undefined if not mentioned):
 - expiryDate: Funding deadline (ISO string or timestamp) - ONLY extract if explicitly mentioned
 - timelockRefundDelay: Refund delay in seconds (as string) - ONLY extract if explicitly mentioned
 - participants: Array of participant addresses - ONLY extract if explicitly mentioned
-- shareBps: Array of share basis points - ONLY extract if explicitly mentioned`
+- shareBps: Array of share basis points - ONLY extract if explicitly mentioned
+
+WALLET ADDRESS HANDLING:
+- If user indicates they are a participant ("I'm joining", "I want to contribute"), extract "me" for that participant entry
+- If user refers to themselves for any role, extract the literal string "me" (not the wallet address)
+- DO NOT substitute wallet addresses - keep "me" as-is for frontend resolution
+- Connected wallet: ${walletAddress || 'Not available'}`
 
     case 'stable-allowance-treasury':
       return `Extract Stable Allowance Treasury configuration from the conversation.
@@ -89,6 +95,13 @@ Fields to extract (leave as undefined if not mentioned):
 - owner: Controller Ethereum address (0x...) - ONLY extract if explicitly mentioned
 - recipient: Beneficiary Ethereum address (0x...) - ONLY extract if explicitly mentioned
 - allowancePerIncrement: USDC per claim (as string) - ONLY extract if explicitly mentioned
+
+WALLET ADDRESS HANDLING:
+- If user indicates they are the owner ("I'm the parent", "I'm managing"), extract "me" for owner field
+- If user indicates they are the recipient ("I'm the child", "it's my allowance"), extract "me" for recipient field
+- Extract the literal string "me" (not the wallet address) for frontend resolution
+- DO NOT substitute wallet addresses directly
+- Connected wallet: ${walletAddress || 'Not available'}
 
 IMPORTANT: If the conversation doesn't contain specific values, leave all fields undefined.
 Do NOT invent or guess values. Return an empty object if no contract data is available.

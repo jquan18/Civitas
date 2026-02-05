@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 .claude
 .agent
 .cursor
+.mcp.json

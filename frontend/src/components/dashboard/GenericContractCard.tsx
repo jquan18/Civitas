@@ -2,7 +2,7 @@
 
 import HardShadowCard from '@/components/ui/HardShadowCard';
 import { getTemplateInfo, getContractState } from '@/lib/contracts/template-utils';
-import type { ContractTemplate } from '@/lib/contracts/constants';
+import { CONTRACT_TEMPLATES, type ContractTemplate } from '@/lib/contracts/constants';
 
 interface GenericContract {
   id: string;
@@ -42,17 +42,17 @@ export function GenericContractCard({ contract, onClick }: GenericContractCardPr
   let secondaryInfo = '';
 
   try {
-    if (contract.template_id === 'RENT_VAULT') {
+    if (contract.template_id === CONTRACT_TEMPLATES.RENT_VAULT) {
       const amount = contract.config.rentAmount ? (parseFloat(contract.config.rentAmount) / 1e6).toFixed(2) : '0';
       const tenants = contract.config.tenants?.length || 0;
       primaryInfo = `${tenants} tenant${tenants !== 1 ? 's' : ''}`;
       secondaryInfo = `${amount} USDC`;
-    } else if (contract.template_id === 'GROUP_BUY_ESCROW') {
+    } else if (contract.template_id === CONTRACT_TEMPLATES.GROUP_BUY_ESCROW) {
       const goal = contract.config.fundingGoal ? (parseFloat(contract.config.fundingGoal) / 1e6).toFixed(2) : '0';
       const participants = contract.config.participants?.length || 0;
       primaryInfo = `${participants} participant${participants !== 1 ? 's' : ''}`;
       secondaryInfo = `Goal: ${goal} USDC`;
-    } else if (contract.template_id === 'STABLE_ALLOWANCE_TREASURY') {
+    } else if (contract.template_id === CONTRACT_TEMPLATES.STABLE_ALLOWANCE_TREASURY) {
       const allowance = contract.config.allowancePerIncrement ? (parseFloat(contract.config.allowancePerIncrement) / 1e6).toFixed(2) : '0';
       primaryInfo = 'Allowance';
       secondaryInfo = `${allowance} USDC`;

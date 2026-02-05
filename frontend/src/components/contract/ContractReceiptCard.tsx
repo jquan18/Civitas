@@ -133,7 +133,7 @@ export function ContractReceiptCard({
   const fieldsToDisplay = template.receiptFields || template.dashboardFields
 
   return (
-    <div className="sticky top-24 w-full max-w-md mx-auto">
+    <div className="relative mb-8 w-full max-w-md mx-auto">
       {/* Receipt Card with Jagged Bottom */}
       <div
         className="bg-white border-[3px] border-black border-b-0 shadow-[6px_6px_0px_#000] animate-receipt-print"

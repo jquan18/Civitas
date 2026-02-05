@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@lifi/sdk": "^3.15.5",
-    "@lifi/widget": "^3.40.6"
-  }
-}

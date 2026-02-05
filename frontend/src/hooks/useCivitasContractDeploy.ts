@@ -15,7 +15,9 @@ interface PendingDeployment {
 const PENDING_KEY = 'civitas_pending_deployment';
 
 function persistPendingDeployment(data: PendingDeployment) {
-  localStorage.setItem(PENDING_KEY, JSON.stringify(data));
+  localStorage.setItem(PENDING_KEY, JSON.stringify(data, (_, v) =>
+    typeof v === 'bigint' ? v.toString() : v
+  ));
 }
 
 function clearPendingDeployment() {
@@ -53,6 +55,19 @@ export function useCivitasContractDeploy() {
   const { address } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
+
+  // State declarations - MUST come before useEffect hooks that reference them
+  const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
+  const [deployedAddress, setDeployedAddress] = useState<`0x${string}` | null>(null);
+  const [isStoring, setIsStoring] = useState(false);
+  const [deploymentParams, setDeploymentParams] = useState<DeploymentParams | null>(null);
+  const [hasStored, setHasStored] = useState(false);
+
+  // ENS state
+  const [ensStep, setEnsStep] = useState<EnsStep>('idle');
+  const [ensName, setEnsName] = useState<string | null>(null);
+  const [ensError, setEnsError] = useState<string | null>(null);
+
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const {
     data: receipt,
@@ -79,7 +94,7 @@ export function useCivitasContractDeploy() {
     hash: ensHash,
   });
 
-  // Debug logging
+  // Debug logging and persist pending deployment
   useEffect(() => {
     if (hash) {
       console.log('');
@@ -96,8 +111,20 @@ export function useCivitasContractDeploy() {
       console.log('   3. If NOT found → RPC issue (frontend not using Alchemy)');
       console.log('   4. If found → Success! RPC is working');
       console.log('========================================');
+
+      // Persist deployment to localStorage for recovery
+      if (selectedTemplate && deploymentParams) {
+        const pendingDeployment: PendingDeployment = {
+          templateId: selectedTemplate,
+          params: deploymentParams,
+          txHash: hash,
+          timestamp: Date.now(),
+        };
+        persistPendingDeployment(pendingDeployment);
+        console.log('💾 Persisted pending deployment to localStorage');
+      }
     }
-  }, [hash, chainId]);
+  }, [hash, chainId, selectedTemplate, deploymentParams]);
 
   useEffect(() => {
     if (isConfirming) {
@@ -112,17 +139,6 @@ export function useCivitasContractDeploy() {
       console.log('📋 Logs count:', receipt.logs.length);
     }
   }, [receipt]);
-
-  const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
-  const [deployedAddress, setDeployedAddress] = useState<`0x${string}` | null>(null);
-  const [isStoring, setIsStoring] = useState(false);
-  const [deploymentParams, setDeploymentParams] = useState<DeploymentParams | null>(null);
-  const [hasStored, setHasStored] = useState(false);
-
-  // ENS state
-  const [ensStep, setEnsStep] = useState<EnsStep>('idle');
-  const [ensName, setEnsName] = useState<string | null>(null);
-  const [ensError, setEnsError] = useState<string | null>(null);
 
   /**
    * Deploy contract based on selected template
@@ -146,7 +162,9 @@ export function useCivitasContractDeploy() {
     setEnsName(null);
     setEnsError(null);
 
-    // Note: We persist deployment after getting txHash in writeContract callback
+    // Note: We'll persist the deployment AFTER getting the transaction hash
+    // (the PendingDeployment interface requires txHash, which we don't have yet)
+
 
     // Deploy based on template
     let functionName: string;
@@ -474,9 +492,12 @@ export function useCivitasContractDeploy() {
             console.log(`📝 Found event: ${decoded.eventName}`);
 
             if (decoded.eventName === eventName) {
-              // Different events use different property names for the deployed address
-              const args = decoded.args as any;
-              contractAddress = (args.clone || args.contractAddress) as `0x${string}`;
+              // Type narrowing: deployment events have 'clone', ENS events have 'contractAddress'
+              if ('clone' in decoded.args) {
+                contractAddress = decoded.args.clone as `0x${string}`;
+              } else if ('contractAddress' in decoded.args) {
+                contractAddress = decoded.args.contractAddress as `0x${string}`;
+              }
               console.log(`📍 Found ${eventName} event, contract deployed at:`, contractAddress);
               break;
             }

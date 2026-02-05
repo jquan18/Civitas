@@ -27,6 +27,74 @@ export interface ENSResolutionReport {
 }
 
 /**
+ * Check if a string is a "me" reference (case-insensitive)
+ */
+function isMeReference(value: string): boolean {
+  return value.toLowerCase() === 'me';
+}
+
+/**
+ * Resolve all "me" references in config to walletAddress
+ * Must be called BEFORE ENS resolution
+ */
+export function resolveMeReferences(
+  templateId: string,
+  config: any,
+  walletAddress: `0x${string}` | undefined
+): any {
+  const resolvedConfig = JSON.parse(JSON.stringify(config));
+
+  const replaceMeIfNeeded = (value: string | undefined): string | undefined => {
+    if (!value) return value;
+    if (isMeReference(value)) {
+      if (!walletAddress) {
+        throw new Error(
+          'Cannot resolve "me" reference: wallet not connected. ' +
+          'Please connect your wallet to use "me" in contract configuration.'
+        );
+      }
+      return walletAddress;
+    }
+    return value;
+  };
+
+  switch (templateId) {
+    case 'rent-vault': {
+      const c = resolvedConfig as RentVaultConfig;
+      c.recipient = replaceMeIfNeeded(c.recipient);
+      if (c.tenants) {
+        c.tenants = c.tenants.map((tenant: string) => {
+          const replaced = replaceMeIfNeeded(tenant);
+          if (!replaced) throw new Error('Tenant address cannot be empty after resolution');
+          return replaced;
+        });
+      }
+      break;
+    }
+    case 'group-buy-escrow': {
+      const c = resolvedConfig as GroupBuyEscrowConfig;
+      c.recipient = replaceMeIfNeeded(c.recipient);
+      if (c.participants) {
+        c.participants = c.participants.map((participant: string) => {
+          const replaced = replaceMeIfNeeded(participant);
+          if (!replaced) throw new Error('Participant address cannot be empty after resolution');
+          return replaced;
+        });
+      }
+      break;
+    }
+    case 'stable-allowance-treasury': {
+      const c = resolvedConfig as StableAllowanceTreasuryConfig;
+      c.owner = replaceMeIfNeeded(c.owner);
+      c.recipient = replaceMeIfNeeded(c.recipient);
+      break;
+    }
+  }
+
+  return resolvedConfig;
+}
+
+/**
  * Extract all address/ENS fields from a config that need resolution
  */
 function extractAddressFields(templateId: string, config: any): string[] {
@@ -205,22 +273,13 @@ export function transformConfigToDeployParams(
       const c = config as RentVaultConfig;
 
       // Parse rent amount (could be string with commas or just a number string)
-      if (!c.rentAmount) {
-        throw new Error('Rent amount is required');
-      }
       const rentAmountStr = c.rentAmount.replace(/,/g, '');
       const rentAmount = parseUnits(rentAmountStr, 6);
 
       // Parse due date with validation
-      if (!c.dueDate) {
-        throw new Error('Due date is required');
-      }
       const dueDate = parseDateToBigInt(c.dueDate, 'due date');
-
+      
       // Convert shareBps to bigint array
-      if (!c.shareBps) {
-        throw new Error('Share percentages are required');
-      }
       const shareBps = c.shareBps.map(s => BigInt(s));
       
       return {
@@ -236,24 +295,18 @@ export function transformConfigToDeployParams(
       const c = config as GroupBuyEscrowConfig;
 
       // Parse funding goal
-      if (!c.fundingGoal) {
-        throw new Error('Funding goal is required');
-      }
       const fundingGoalStr = c.fundingGoal.replace(/,/g, '');
       const fundingGoal = parseUnits(fundingGoalStr, 6);
 
       // Parse expiry date with validation
-      if (!c.expiryDate) {
-        throw new Error('Expiry date is required');
-      }
       const expiryDate = parseDateToBigInt(c.expiryDate, 'expiry date');
-
+      
       // Parse timelock delay (could be in days, convert to seconds)
       if (!c.timelockRefundDelay) {
         throw new Error('Timelock refund delay is required');
       }
       let timelockRefundDelay: bigint;
-      const delayStr = c.timelockRefundDelay.replace(/,/g, '');
+      const delayStr = (c.timelockRefundDelay || '0').replace(/,/g, '');
       const delayNum = parseFloat(delayStr);
       // If less than 1000, assume days and convert to seconds
       if (delayNum < 1000) {
@@ -263,9 +316,6 @@ export function transformConfigToDeployParams(
       }
 
       // Convert shareBps to bigint array
-      if (!c.shareBps) {
-        throw new Error('Share percentages are required');
-      }
       const shareBps = c.shareBps.map(s => BigInt(s));
       
       return {
@@ -282,9 +332,6 @@ export function transformConfigToDeployParams(
       const c = config as StableAllowanceTreasuryConfig;
 
       // Parse allowance amount
-      if (!c.allowancePerIncrement) {
-        throw new Error('Allowance per increment is required');
-      }
       const allowanceStr = c.allowancePerIncrement.replace(/,/g, '');
       const allowancePerIncrement = parseUnits(allowanceStr, 6);
       
@@ -347,7 +394,7 @@ export function validateConfig(templateId: string, config: any): string | null {
         return 'Missing required fields';
       }
       if (c.owner.toLowerCase() === c.recipient.toLowerCase()) {
-        return 'Owner and recipient must be different addresses';
+        return 'Owner and recipient must be different addresses. You cannot be both the owner and recipient of an allowance treasury.';
       }
       return null;
     }

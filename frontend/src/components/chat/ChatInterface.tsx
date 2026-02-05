@@ -41,14 +41,17 @@ export function ChatInterface() {
           </HardShadowCard>
         )}
 
-        {messages.map((message) => (
-          <div key={message.id} className="relative z-10">
-            <ChatBubble
-              role={message.role === 'user' ? 'user' : 'agent'}
-              message={getMessageText(message)}
-            />
-          </div>
-        ))}
+        {messages.map((message, index) => {
+          const isLastMessage = index === messages.length - 1;
+          return (
+            <div key={message.id} className="relative z-10">
+              <ChatBubble
+                message={message}
+                isLoading={isLoading && isLastMessage && message.role === 'assistant'}
+              />
+            </div>
+          );
+        })}
 
         {isLoading && (
           <div className="flex justify-start mb-6 relative z-10">

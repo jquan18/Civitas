@@ -17,10 +17,25 @@ export type RentalConfig = z.infer<typeof RentalConfigSchema>;
 // Multi-Template Schemas
 // ============================================
 
+/**
+ * Validates address-like inputs: 0x addresses, ENS names (.eth), or "me" references
+ */
+const AddressOrReferenceSchema = z.string().refine(
+  (val) => {
+    if (val.toLowerCase() === 'me') return true;
+    const lower = val.toLowerCase();
+    if (lower.endsWith('.eth') || lower.endsWith('.base.eth') || lower.endsWith('.basetest.eth')) {
+      return true;
+    }
+    if (/^0x[a-fA-F0-9]{40}$/.test(val)) return true;
+    return false;
+  },
+  { message: 'Must be a valid Ethereum address (0x...), ENS name (.eth), or "me"' }
+);
+
 // Rent Vault: Multi-tenant rent collection
 export const RentVaultConfigSchema = z.object({
-  recipient: z.string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid recipient address')
+  recipient: AddressOrReferenceSchema
     .optional()
     .describe('Landlord/recipient Ethereum address'),
   rentAmount: z.string()
@@ -29,7 +44,7 @@ export const RentVaultConfigSchema = z.object({
   dueDate: z.string()
     .optional()
     .describe('Due date as ISO 8601 date string (e.g., "2026-02-02T00:00:00.000Z") or Unix timestamp. MUST be specific future date in ISO format, NOT relative phrases like "2nd of month"'),
-  tenants: z.array(z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid tenant address'))
+  tenants: z.array(AddressOrReferenceSchema)
     .optional()
     .describe('Array of tenant Ethereum addresses'),
   shareBps: z.array(z.number().int().positive())
@@ -41,8 +56,7 @@ export type RentVaultConfig = z.infer<typeof RentVaultConfigSchema>;
 
 // Group Buy Escrow: Group purchase with voting
 export const GroupBuyEscrowConfigSchema = z.object({
-  recipient: z.string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid recipient address')
+  recipient: AddressOrReferenceSchema
     .optional()
     .describe('Seller/recipient Ethereum address'),
   fundingGoal: z.string()
@@ -54,7 +68,7 @@ export const GroupBuyEscrowConfigSchema = z.object({
   timelockRefundDelay: z.string()
     .optional()
     .describe('Delay in seconds after goal reached before timelock refund is available'),
-  participants: z.array(z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid participant address'))
+  participants: z.array(AddressOrReferenceSchema)
     .optional()
     .describe('Array of participant Ethereum addresses'),
   shareBps: z.array(z.number().int().positive())
@@ -66,12 +80,10 @@ export type GroupBuyEscrowConfig = z.infer<typeof GroupBuyEscrowConfigSchema>;
 
 // Stable Allowance Treasury: Counter-based allowance
 export const StableAllowanceTreasuryConfigSchema = z.object({
-  owner: z.string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid owner address')
+  owner: AddressOrReferenceSchema
     .optional()
     .describe('Owner/controller Ethereum address (e.g., parent)'),
-  recipient: z.string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid recipient address')
+  recipient: AddressOrReferenceSchema
     .optional()
     .describe('Recipient Ethereum address (e.g., child)'),
   allowancePerIncrement: z.string()

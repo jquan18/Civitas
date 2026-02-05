@@ -9,11 +9,13 @@ import CommandZone from '@/components/dashboard/CommandZone';
 import ExecutionZoneRouter from '@/components/dashboard/ExecutionZoneRouter';
 import NetworkSwitcher from '@/components/wallet/NetworkSwitcher';
 
+import type { ContractTemplate } from '@/lib/contracts/constants';
+
 // Contract type from database
 interface GenericContract {
   id: string;
   contract_address: string;
-  template_id: string;
+  template_id: ContractTemplate;
   creator_address: string;
   chain_id: number;
   state: number;

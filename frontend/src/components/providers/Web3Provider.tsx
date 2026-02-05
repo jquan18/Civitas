@@ -30,9 +30,14 @@ const config = createConfig({
   chains: [base, baseSepolia, arbitrum, optimism],
   connectors: [
     injected(),
-    walletConnect({
-      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '78531232796f972267f68a343b2f0a51',
-    }),
+    // Only include WalletConnect on client-side to avoid SSR errors
+    ...(typeof window !== 'undefined'
+      ? [
+        walletConnect({
+          projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '78531232796f972267f68a343b2f0a51',
+        }),
+      ]
+      : []),
   ],
   transports: {
     [base.id]: http(BASE_MAINNET_RPC, {

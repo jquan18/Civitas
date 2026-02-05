@@ -2,16 +2,38 @@
 
 import { Streamdown } from 'streamdown';
 import { code } from '@streamdown/code';
+import type { UIMessage } from 'ai';
+import { ToolResultDisplay } from './ToolResultDisplay';
 
 interface ChatBubbleProps {
-  role: 'user' | 'agent';
-  message: string;
+  message: UIMessage;
   timestamp?: string;
   isLoading?: boolean;
 }
 
-export function ChatBubble({ role, message, timestamp, isLoading = false }: ChatBubbleProps) {
-  const isUser = role === 'user';
+/**
+ * Extract text content from message parts
+ */
+function getMessageText(message: UIMessage): string {
+  return message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => (part as any).text)
+    .join('');
+}
+
+/**
+ * Extract tool invocations from message parts
+ */
+function getToolInvocations(message: UIMessage) {
+  return message.parts.filter(
+    (part) => part.type === 'tool-call' || part.type === 'tool-result'
+  );
+}
+
+export function ChatBubble({ message, timestamp, isLoading = false }: ChatBubbleProps) {
+  const isUser = message.role === 'user';
+  const messageText = getMessageText(message);
+  const toolInvocations = getToolInvocations(message);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
@@ -25,21 +47,28 @@ export function ChatBubble({ role, message, timestamp, isLoading = false }: Chat
           }`}
         >
           {isUser ? (
-            <p
-              className="text-base font-black text-black leading-relaxed whitespace-pre-wrap"
-            >
-              {message}
+            <p className="text-base font-black text-black leading-relaxed whitespace-pre-wrap">
+              {messageText}
             </p>
           ) : (
-            <div className="text-base font-display text-black font-medium leading-relaxed prose-civitas">
-              <Streamdown
-                plugins={{ code }}
-                isAnimating={role === 'agent' && isLoading}
-                caret={role === 'agent' && isLoading ? 'block' : undefined}
-              >
-                {message}
-              </Streamdown>
-            </div>
+            <>
+              <div className="text-base font-display text-black font-medium leading-relaxed prose-civitas">
+                <Streamdown
+                  plugins={{ code }}
+                  isAnimating={message.role === 'assistant' && isLoading}
+                  caret={message.role === 'assistant' && isLoading ? 'block' : undefined}
+                >
+                  {messageText}
+                </Streamdown>
+              </div>
+
+              {/* Render tool invocations for assistant messages */}
+              {!isUser &&
+                toolInvocations.length > 0 &&
+                toolInvocations.map((toolInvocation: any, index) => (
+                  <ToolResultDisplay key={index} toolInvocation={toolInvocation} />
+                ))}
+            </>
           )}
           {timestamp && (
             <span className="block mt-2 text-xs font-display text-black opacity-60 uppercase tracking-wide">
@@ -47,12 +76,10 @@ export function ChatBubble({ role, message, timestamp, isLoading = false }: Chat
             </span>
           )}
         </div>
-        
+
         {/* Notch triangle - positioned absolutely */}
         <div
-          className={`absolute ${
-            isUser ? 'bubble-tip-right' : 'bubble-tip-left'
-          }`}
+          className={`absolute ${isUser ? 'bubble-tip-right' : 'bubble-tip-left'}`}
         />
       </div>
     </div>

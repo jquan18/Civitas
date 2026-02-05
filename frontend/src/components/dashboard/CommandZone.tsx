@@ -1,11 +1,12 @@
 'use client';
 
 import { GenericContractCard } from './GenericContractCard';
+import { CONTRACT_TEMPLATES, type ContractTemplate } from '@/lib/contracts/constants';
 
 interface GenericContract {
   id: string;
   contract_address: string;
-  template_id: string;
+  template_id: ContractTemplate;
   creator_address: string;
   chain_id: number;
   state: number;
@@ -17,12 +18,18 @@ interface GenericContract {
   last_synced_at: string | null;
 }
 
+type AllContracts = GenericContract;
+
 interface CommandZoneProps {
   rentalContracts: GenericContract[];
   genericContracts: GenericContract[];
   onSelectContract: (contract: GenericContract) => void;
   selectedContract: GenericContract | null;
   loading?: boolean;
+}
+
+function isRentalContract(contract: AllContracts): boolean {
+  return contract.template_id === CONTRACT_TEMPLATES.RENT_VAULT;
 }
 
 export default function CommandZone({

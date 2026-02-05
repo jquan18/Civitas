@@ -71,8 +71,8 @@ export default function WalletPage() {
         </h2>
         <div className="flex gap-2 items-center">
           <span className={`text-xs font-display font-bold px-2 py-1 border-2 ${networkMode === 'mainnet'
-              ? 'bg-acid-lime text-black border-black'
-              : 'bg-hot-pink text-white border-black'
+            ? 'bg-acid-lime text-black border-black'
+            : 'bg-hot-pink text-white border-black'
             }`}>
             {networkMode.toUpperCase()}
           </span>
