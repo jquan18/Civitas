@@ -1,22 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { parseUnits } from 'viem';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCivitasContractDeploy, type RentVaultParams, type GroupBuyEscrowParams, type StableAllowanceTreasuryParams } from '@/hooks/useCivitasContractDeploy';
-import { CONTRACT_TEMPLATES, type ContractTemplate } from '@/lib/contracts/constants';
+import { CONTRACT_TEMPLATES, type ContractTemplate, getExplorerTxUrl, getExplorerAddressUrl, CHAIN_CONFIG } from '@/lib/contracts/constants';
+import { useNetworkMode } from '@/contexts/NetworkModeContext';
 
 export default function TestContractPage() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const router = useRouter();
+  const chainId = useChainId();
+  const { networkMode } = useNetworkMode();
   const { deployContract, isDeploying, isSuccess, deploymentHash, deployedAddress, error } = useCivitasContractDeploy();
 
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
+
+  // Get chain name for display
+  const chainConfig = CHAIN_CONFIG[chainId as keyof typeof CHAIN_CONFIG];
+  const chainName = chainConfig?.name || `Chain ${chainId}`;
 
   // Wallet connection
   const handleConnect = () => {
@@ -32,7 +39,7 @@ export default function TestContractPage() {
             Contract Deployment Test
           </h1>
           <p className="text-lg text-gray-600">
-            Deploy and test Civitas smart contract templates on Base Sepolia
+            Deploy and test Civitas smart contract templates on {chainName}
           </p>
         </div>
 
@@ -139,7 +146,7 @@ export default function TestContractPage() {
                   <div className="text-sm">
                     <p className="text-gray-600 mb-1">Transaction Hash:</p>
                     <a
-                      href={`https://sepolia.basescan.org/tx/${deploymentHash}`}
+                      href={getExplorerTxUrl(chainId, deploymentHash)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-xs text-blue-600 hover:underline break-all"
@@ -147,7 +154,7 @@ export default function TestContractPage() {
                       {deploymentHash}
                     </a>
                     <p className="text-xs text-gray-500 mt-2">
-                      ⏱️ Taking too long? Check the transaction status on BaseScan (link above)
+                      ⏱️ Taking too long? Check the transaction status on the explorer (link above)
                     </p>
                   </div>
                 )}
@@ -160,7 +167,7 @@ export default function TestContractPage() {
                 <div className="mb-3">
                   <p className="text-sm font-medium text-gray-700">Contract Address:</p>
                   <a
-                    href={`https://sepolia.basescan.org/address/${deployedAddress}`}
+                    href={getExplorerAddressUrl(chainId, deployedAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-xs text-blue-600 hover:underline break-all"
@@ -172,7 +179,7 @@ export default function TestContractPage() {
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700">Transaction Hash:</p>
                   <a
-                    href={`https://sepolia.basescan.org/tx/${deploymentHash}`}
+                    href={getExplorerTxUrl(chainId, deploymentHash || '')}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-xs text-blue-600 hover:underline break-all"
@@ -189,12 +196,12 @@ export default function TestContractPage() {
                     📋 View in My Contracts
                   </Link>
                   <a
-                    href={`https://sepolia.basescan.org/address/${deployedAddress}`}
+                    href={getExplorerAddressUrl(chainId, deployedAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition text-center"
                   >
-                    🔍 View on BaseScan
+                    🔍 View on Explorer
                   </a>
                 </div>
               </div>

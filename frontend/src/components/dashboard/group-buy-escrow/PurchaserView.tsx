@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { formatUnits } from 'viem';
-import { useWriteContract, useReadContract } from 'wagmi';
+import { useWriteContract, useReadContract, useChainId } from 'wagmi';
 import type { AllContracts } from '@/app/dashboard/page';
 import TornPaperCard from '@/components/ui/TornPaperCard';
 import TactileButton from '@/components/ui/TactileButton';
 import { Package, Send, AlertCircle, Shield, ExternalLink } from 'lucide-react';
 import { GROUP_BUY_ESCROW_ABI } from '@/lib/contracts/abis';
-import { CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 
 interface PurchaserViewProps {
@@ -21,8 +21,10 @@ interface PurchaserViewProps {
 export default function PurchaserView({ contract, userAddress, onSync }: PurchaserViewProps) {
   const [deliveryProofInput, setDeliveryProofInput] = useState('');
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const chainId = useChainId();
 
   const contractAddress = contract.contract_address as `0x${string}`;
+  const ensDomain = getCivitasEnsDomain(contract.chain_id || chainId);
 
   // Read contract state
   const { data: fundingGoal } = useReadContract({
@@ -183,14 +185,14 @@ export default function PurchaserView({ contract, userAddress, onSync }: Purchas
             {/* ENS Name Badge */}
             {contract.basename && (
               <Link
-                href={`/verify?name=${contract.basename}.${CIVITAS_ENS_DOMAIN}`}
+                href={`/verify?name=${contract.basename}.${ensDomain}`}
                 className="bg-acid-lime p-3 border-2 border-black flex items-center justify-between gap-2 overflow-hidden hover:bg-lime-300 transition-colors group"
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <Shield className="w-4 h-4 text-void-black shrink-0" />
                   <div className="min-w-0 flex-1">
                     <span className="font-mono text-sm text-void-black truncate block">
-                      {contract.basename}.{CIVITAS_ENS_DOMAIN}
+                      {contract.basename}.{ensDomain}
                     </span>
                     <span className="font-mono text-xs text-void-black/60">
                       View Contract on ENS →

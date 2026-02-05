@@ -1,6 +1,6 @@
 import { useReadContract, useChainId } from 'wagmi';
 import { CIVITAS_FACTORY_ABI, ENS_L2_RESOLVER_ABI } from '@/lib/contracts/abis';
-import { CIVITAS_FACTORY_ADDRESS, ENS_L2_RESOLVER, CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import { CIVITAS_FACTORY_ADDRESS, ENS_L2_RESOLVER, getCivitasEnsDomain } from '@/lib/contracts/constants';
 
 const ENS_RECORD_KEYS = [
   'contract.type',
@@ -102,7 +102,8 @@ export function useContractENSData(basename: string | undefined | null) {
   });
 
   const isLoading = isNodeLoading;
-  const ensName = basename ? `${basename}.${CIVITAS_ENS_DOMAIN}` : null;
+  const ensDomain = getCivitasEnsDomain(chainId);
+  const ensName = basename ? `${basename}.${ensDomain}` : null;
 
   // Collect all records into a map
   const records: Record<string, string> = {};

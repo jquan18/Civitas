@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useSwitchChain, useChainId, useAccount } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { base, baseSepolia } from 'wagmi/chains';
 import { Network, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { useNetworkMode } from '@/contexts/NetworkModeContext';
 
 interface NetworkSwitcherProps {
   inline?: boolean;
@@ -13,19 +14,22 @@ export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps
   const { switchChain } = useSwitchChain();
   const currentChainId = useChainId();
   const { connector } = useAccount();
+  const { networkMode } = useNetworkMode();
   const [isSwitching, setIsSwitching] = useState(false);
   const [showManualInstructions, setShowManualInstructions] = useState(false);
 
-  const isOnBaseSepolia = currentChainId === baseSepolia.id;
+  // Determine target chain based on network mode
+  const targetChain = networkMode === 'mainnet' ? base : baseSepolia;
+  const isOnCorrectNetwork = currentChainId === targetChain.id;
   const isSmartWallet = connector?.name?.toLowerCase().includes('coinbase') ||
                         connector?.name?.toLowerCase().includes('smart');
 
   const handleSwitchNetwork = async () => {
-    if (!switchChain || isOnBaseSepolia) return;
+    if (!switchChain || isOnCorrectNetwork) return;
 
     try {
       setIsSwitching(true);
-      await switchChain({ chainId: baseSepolia.id });
+      await switchChain({ chainId: targetChain.id });
     } catch (error: any) {
       console.error('Failed to switch network:', error);
 
@@ -44,7 +48,7 @@ export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps
     <>
       <button
         onClick={handleSwitchNetwork}
-        disabled={isOnBaseSepolia || isSwitching}
+        disabled={isOnCorrectNetwork || isSwitching}
         className={`
           ${inline ? 'relative' : 'fixed top-4 right-4 z-50'}
           flex items-center gap-2
@@ -54,17 +58,17 @@ export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps
           font-display font-bold text-sm uppercase
           transition-all
           ${
-            isOnBaseSepolia
+            isOnCorrectNetwork
               ? 'bg-acid-lime text-void-black cursor-default'
               : 'bg-hot-pink text-stark-white hover:shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer'
           }
           ${isSwitching ? 'opacity-50 cursor-wait' : ''}
         `}
       >
-        {isOnBaseSepolia ? (
+        {isOnCorrectNetwork ? (
           <>
             <CheckCircle2 className="w-4 h-4" />
-            <span className={inline ? 'hidden sm:inline' : ''}>Base Sepolia</span>
+            <span className={inline ? 'hidden sm:inline' : ''}>{targetChain.name}</span>
           </>
         ) : (
           <>
@@ -104,7 +108,7 @@ export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps
                 <ol className="list-decimal list-inside space-y-1 text-gray-700">
                   <li>Open the Coinbase Wallet app</li>
                   <li>Tap the network selector at the top</li>
-                  <li>Select "Base Sepolia" from the list</li>
+                  <li>Select "{targetChain.name}" from the list</li>
                   <li>Return to this page and refresh</li>
                 </ol>
               </div>
@@ -112,14 +116,16 @@ export default function NetworkSwitcher({ inline = false }: NetworkSwitcherProps
               <div className="pt-3 border-t-2 border-dashed border-black">
                 <p className="font-bold mb-1">Current Network:</p>
                 <p className="text-red-600 font-mono text-xs">
-                  {currentChainId === 8453 ? 'Base Mainnet (8453)' : `Chain ID: ${currentChainId}`}
+                  {currentChainId === base.id ? 'Base Mainnet (8453)' :
+                   currentChainId === baseSepolia.id ? 'Base Sepolia (84532)' :
+                   `Chain ID: ${currentChainId}`}
                 </p>
               </div>
 
               <div>
                 <p className="font-bold mb-1">Required Network:</p>
                 <p className="text-green-600 font-mono text-xs">
-                  Base Sepolia (84532)
+                  {targetChain.name} ({targetChain.id})
                 </p>
               </div>
 

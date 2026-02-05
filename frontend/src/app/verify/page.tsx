@@ -6,7 +6,7 @@ import { CIVITAS_FACTORY_ABI, ENS_L2_RESOLVER_ABI } from '@/lib/contracts/abis';
 import {
   CIVITAS_FACTORY_ADDRESS,
   ENS_L2_RESOLVER,
-  CIVITAS_ENS_DOMAIN,
+  getCivitasEnsDomain,
   CHAIN_CONFIG,
 } from '@/lib/contracts/constants';
 import { formatUnits } from 'viem';
@@ -88,9 +88,10 @@ function VerifyByName({ name }: { name: string }) {
   const chainId = useChainId();
   const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
   const [copied, setCopied] = useState(false);
+  const ensDomain = getCivitasEnsDomain(chainId);
 
   // Strip the domain suffix to get the basename for contract lookup
-  const basename = name.replace(`.${CIVITAS_ENS_DOMAIN}`, '');
+  const basename = name.replace(`.${ensDomain}`, '');
 
   // Resolve contract address from basename
   const { data: contractAddress, isLoading: isResolving } = useReadContract({
@@ -206,9 +207,11 @@ function VerifyByName({ name }: { name: string }) {
 
 function VerifyPageContent() {
   const searchParams = useSearchParams();
+  const chainId = useChainId();
   const initialName = searchParams.get('name') || '';
   const [searchInput, setSearchInput] = useState(initialName);
   const [activeQuery, setActiveQuery] = useState(initialName);
+  const ensDomain = getCivitasEnsDomain(chainId);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +250,7 @@ function VerifyPageContent() {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={`e.g. downtown-studio-a3f9.${CIVITAS_ENS_DOMAIN} or 0x...`}
+                  placeholder={`e.g. downtown-studio-a3f9.${ensDomain} or 0x...`}
                   className="flex-1 border-4 border-black border-r-0 px-4 py-3 font-mono text-sm bg-white focus:outline-none focus:ring-2 focus:ring-acid-lime"
                 />
                 <button

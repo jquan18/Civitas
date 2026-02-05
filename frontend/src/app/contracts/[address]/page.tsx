@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { WalletGate } from '@/components/wallet/WalletGate';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
@@ -10,7 +10,7 @@ import { templateRegistry } from '@/lib/templates/registry';
 import { StatusBanner } from '@/components/ui/StatusBanner';
 import { formatUnits } from 'viem';
 import { ExternalLink, Copy, Check, Shield } from 'lucide-react';
-import { CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 
 interface Contract {
@@ -22,6 +22,7 @@ interface Contract {
   config: any;
   on_chain_state?: any;
   created_at: string;
+  chain_id?: number;
 }
 
 const stateLabels = [
@@ -35,12 +36,16 @@ const stateLabels = [
 export default function ContractDetailPage() {
   const params = useParams();
   const { address: userAddress } = useAccount();
+  const chainId = useChainId();
   const contractAddress = params.address as string;
 
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Get ENS domain based on contract's chain or current chain
+  const ensDomain = getCivitasEnsDomain(contract?.chain_id || chainId);
 
   useEffect(() => {
     async function loadContract() {
@@ -267,12 +272,12 @@ export default function ContractDetailPage() {
                         <div>
                           <p className="font-mono text-xs uppercase font-bold opacity-60">ENS Identity</p>
                           <p className="font-mono text-sm font-bold">
-                            {contract.basename}.{CIVITAS_ENS_DOMAIN}
+                            {contract.basename}.{ensDomain}
                           </p>
                         </div>
                       </div>
                       <Link
-                        href={`/verify?name=${contract.basename}.${CIVITAS_ENS_DOMAIN}`}
+                        href={`/verify?name=${contract.basename}.${ensDomain}`}
                         className="font-mono text-xs font-bold underline hover:no-underline"
                         onClick={(e) => e.stopPropagation()}
                       >

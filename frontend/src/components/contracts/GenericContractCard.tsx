@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Home, Users, Wallet, ExternalLink, Copy, Check, Shield } from 'lucide-react';
 import { templateRegistry } from '@/lib/templates/registry';
-import { CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import { formatUnits } from 'viem';
 import Link from 'next/link';
 
@@ -17,6 +17,7 @@ interface GenericContractCardProps {
     config: any;
     on_chain_state?: any;
     created_at: string;
+    chain_id?: number;
   };
 }
 
@@ -39,6 +40,7 @@ export function GenericContractCard({ contract }: GenericContractCardProps) {
   const [copied, setCopied] = useState(false);
 
   const template = templateRegistry.get(contract.template_id);
+  const ensDomain = getCivitasEnsDomain(contract.chain_id || 84532);
   
   if (!template) {
     return null; // Invalid template
@@ -179,7 +181,7 @@ export function GenericContractCard({ contract }: GenericContractCardProps) {
           <div className="mb-4 bg-[#CCFF00] border-2 border-black px-3 py-2">
             <div className="flex items-center justify-between">
               <p className="font-mono text-sm font-bold">
-                {contract.basename}.{CIVITAS_ENS_DOMAIN}
+                {contract.basename}.{ensDomain}
               </p>
               <div className="flex items-center gap-1">
                 <Shield className="w-3 h-3" />

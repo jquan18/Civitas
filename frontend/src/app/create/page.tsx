@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useChainId } from 'wagmi';
 import { WalletGate } from '@/components/wallet/WalletGate';
 import { useTemplateChat } from '@/hooks/useTemplateChat';
 import { useCivitasContractDeploy } from '@/hooks/useCivitasContractDeploy';
@@ -14,11 +15,13 @@ import { LoadingSquares } from '@/components/ui/LoadingSquares';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
 import { transformConfigToDeployParams, validateConfig, resolveConfigENSNames, type ENSResolutionReport } from '@/lib/contracts/config-transformer';
-import { CONTRACT_TEMPLATES, CIVITAS_ENS_DOMAIN, type ContractTemplate } from '@/lib/contracts/constants';
+import { CONTRACT_TEMPLATES, getCivitasEnsDomain, type ContractTemplate } from '@/lib/contracts/constants';
 import { isENSName, formatAddress } from '@/lib/ens/resolver';
 
 export default function CreatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chainId = useChainId();
+  const ensDomain = getCivitasEnsDomain(chainId);
   const {
     messages,
     input,
@@ -375,7 +378,7 @@ export default function CreatePage() {
                   <div className="bg-[#CCFF00] border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
                     <p className="font-mono text-xs uppercase font-bold opacity-60 mb-1">ENS Registered</p>
                     <p className="font-mono text-sm font-bold">
-                      {ensName}.{CIVITAS_ENS_DOMAIN}
+                      {ensName}.{ensDomain}
                     </p>
                   </div>
                 </div>

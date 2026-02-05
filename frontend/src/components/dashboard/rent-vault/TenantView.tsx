@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { formatUnits, parseUnits } from 'viem';
-import { useWriteContract, useReadContract } from 'wagmi';
+import { useWriteContract, useReadContract, useChainId } from 'wagmi';
 import type { AllContracts } from '@/app/dashboard/page';
 import TornPaperCard from '@/components/ui/TornPaperCard';
 import TactileButton from '@/components/ui/TactileButton';
 import { Wallet, AlertCircle, Shield, ExternalLink } from 'lucide-react';
 import { RENT_VAULT_ABI, ERC20_ABI } from '@/lib/contracts/abis';
-import { BASE_USDC_ADDRESS, CIVITAS_ENS_DOMAIN } from '@/lib/contracts/constants';
+import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 
 interface TenantViewProps {
@@ -21,9 +21,12 @@ interface TenantViewProps {
 export default function TenantView({ contract, userAddress, onSync }: TenantViewProps) {
   const [depositAmount, setDepositAmount] = useState('');
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const chainId = useChainId();
 
   const config = contract.config || {};
   const contractAddress = contract.contract_address as `0x${string}`;
+  const usdcAddress = getUsdcAddress(chainId);
+  const ensDomain = getCivitasEnsDomain(contract.chain_id || chainId);
 
   // Read tenant-specific data
   const { data: tenantBalance } = useReadContract({
@@ -72,7 +75,7 @@ export default function TenantView({ contract, userAddress, onSync }: TenantView
   });
 
   const { data: usdcAllowance } = useReadContract({
-    address: BASE_USDC_ADDRESS,
+    address: usdcAddress,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [userAddress, contractAddress],
@@ -117,7 +120,7 @@ export default function TenantView({ contract, userAddress, onSync }: TenantView
     if (currentAllowance < amount) {
       // Approve first
       approveUSDC({
-        address: BASE_USDC_ADDRESS,
+        address: usdcAddress,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [contractAddress, amount],
@@ -186,14 +189,14 @@ export default function TenantView({ contract, userAddress, onSync }: TenantView
             {/* ENS Name Badge */}
             {contract.basename && (
               <Link
-                href={`/verify?name=${contract.basename}.${CIVITAS_ENS_DOMAIN}`}
+                href={`/verify?name=${contract.basename}.${ensDomain}`}
                 className="bg-acid-lime p-3 border-2 border-black flex items-center justify-between gap-2 overflow-hidden hover:bg-lime-300 transition-colors group"
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <Shield className="w-4 h-4 text-void-black shrink-0" />
                   <div className="min-w-0 flex-1">
                     <span className="font-mono text-sm text-void-black truncate block">
-                      {contract.basename}.{CIVITAS_ENS_DOMAIN}
+                      {contract.basename}.{ensDomain}
                     </span>
                     <span className="font-mono text-xs text-void-black/60">
                       View Contract on ENS →

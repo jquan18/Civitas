@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi';
-import { CIVITAS_FACTORY_ADDRESS, CONTRACT_TEMPLATES, type ContractTemplate } from '@/lib/contracts/constants';
+import { CIVITAS_FACTORY_ADDRESS, CONTRACT_TEMPLATES, type ContractTemplate, getExplorerTxUrl } from '@/lib/contracts/constants';
 import { CIVITAS_FACTORY_ABI } from '@/lib/contracts/abis';
 import { decodeEventLog } from 'viem';
 
@@ -83,9 +83,9 @@ export function useCivitasContractDeploy() {
   useEffect(() => {
     if (hash) {
       console.log('📝 Transaction submitted:', hash);
-      console.log('🔗 View on BaseScan:', `https://sepolia.basescan.org/tx/${hash}`);
+      console.log('🔗 View on BaseScan:', getExplorerTxUrl(chainId, hash));
     }
-  }, [hash]);
+  }, [hash, chainId]);
 
   useEffect(() => {
     if (isConfirming) {

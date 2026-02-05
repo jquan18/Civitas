@@ -1,11 +1,20 @@
 import { base, baseSepolia } from 'wagmi/chains';
+import type { NetworkMode } from '@/lib/config/networks';
 
 // ============================================================================
 // Chain Configuration
 // ============================================================================
 
 export const SUPPORTED_CHAINS = [base, baseSepolia] as const;
-export const DEFAULT_CHAIN = baseSepolia; // Using testnet as default
+
+// Dynamic chain selection based on network mode
+export function getDefaultChain(networkMode: NetworkMode) {
+  return networkMode === 'mainnet' ? base : baseSepolia;
+}
+
+export function getTargetChainId(networkMode: NetworkMode): number {
+  return networkMode === 'mainnet' ? base.id : baseSepolia.id;
+}
 
 // ============================================================================
 // CivitasFactory Addresses (Base Sepolia Deployment)
@@ -60,9 +69,17 @@ export type ContractTemplate = typeof CONTRACT_TEMPLATES[keyof typeof CONTRACT_T
 
 export const ENS_L2_RESOLVER: Record<number, `0x${string}`> = {
   [baseSepolia.id]: '0x6533C94869D28fAA8dF77cc63f9e2b2D6Cf77eBA',
+  [base.id]: '0x6533C94869D28fAA8dF77cc63f9e2b2D6Cf77eBA', // TODO: Update with mainnet resolver
 };
 
-export const CIVITAS_ENS_DOMAIN = 'civitas.basetest.eth';
+export const CIVITAS_ENS_DOMAIN: Record<number, string> = {
+  [baseSepolia.id]: 'civitas.basetest.eth',
+  [base.id]: 'civitas.base.eth', // TODO: Update when mainnet ENS is set up
+};
+
+export function getCivitasEnsDomain(chainId: number): string {
+  return CIVITAS_ENS_DOMAIN[chainId] || CIVITAS_ENS_DOMAIN[baseSepolia.id];
+}
 
 // ============================================================================
 // Time Constants
@@ -90,7 +107,22 @@ export const CHAIN_CONFIG = {
 } as const;
 
 // ============================================================================
-// Convenience Exports
+// Convenience Functions
 // ============================================================================
 
-export const BASE_USDC_ADDRESS = USDC_ADDRESS[baseSepolia.id]; // Default to testnet
+export function getUsdcAddress(chainId: number): `0x${string}` {
+  return USDC_ADDRESS[chainId] || USDC_ADDRESS[baseSepolia.id];
+}
+
+export function getExplorerUrl(chainId: number): string {
+  const config = CHAIN_CONFIG[chainId as keyof typeof CHAIN_CONFIG];
+  return config?.blockExplorer || CHAIN_CONFIG[baseSepolia.id].blockExplorer;
+}
+
+export function getExplorerTxUrl(chainId: number, txHash: string): string {
+  return `${getExplorerUrl(chainId)}/tx/${txHash}`;
+}
+
+export function getExplorerAddressUrl(chainId: number, address: string): string {
+  return `${getExplorerUrl(chainId)}/address/${address}`;
+}
