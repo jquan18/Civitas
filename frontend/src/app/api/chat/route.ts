@@ -9,7 +9,7 @@ export const runtime = 'edge';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { messages, templateId, timezone, walletAddress } = body;
+    const { messages, templateId, timezone, walletAddress, chainId } = body;
 
     // Validate messages
     if (!messages || !Array.isArray(messages)) {
@@ -19,11 +19,12 @@ export async function POST(req: Request) {
       });
     }
 
-    // Get the appropriate system prompt based on template (with timezone and wallet context)
+    // Get the appropriate system prompt based on template (with timezone, wallet, and network context)
     const systemPrompt = getTemplatePrompt(
       templateId || null,
       timezone as TimezoneInfo | undefined,
-      walletAddress as string | undefined
+      walletAddress as string | undefined,
+      chainId as number | undefined
     );
 
     // Get configured provider (local proxy in dev, official API in production)

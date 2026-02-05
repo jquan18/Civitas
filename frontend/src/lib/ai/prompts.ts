@@ -1,5 +1,6 @@
 import type { TimezoneInfo } from '@/hooks/useUserTimezone';
 import { getCurrentDateTimeContext, getDateConversionExamples } from './temporal-context';
+import { baseSepolia } from 'wagmi/chains';
 
 // ============================================
 // Tool Usage Instructions (shared across all templates)
@@ -35,6 +36,39 @@ TOOL USAGE RULES:
 `;
 
 // ============================================
+// ENS Name Handling Context (Network-Aware)
+// ============================================
+function getENSContext(chainId?: number): string {
+   if (!chainId) {
+      return `Network: Unknown - When users provide names, ask if they mean an ENS name and which suffix (.eth, .base.eth, or .basetest.eth).`;
+   }
+
+   const isTestnet = chainId === baseSepolia.id;
+   const ensDomain = isTestnet ? 'basetest.eth' : 'base.eth';
+   const networkName = isTestnet ? 'Base Sepolia (Testnet)' : 'Base (Mainnet)';
+
+   return `<ens_name_handling>
+Network: ${networkName}
+Default ENS Suffix: ${ensDomain}
+
+IMPORTANT - When a user provides just a name without a suffix (like "papajohnny"):
+1. Assume they mean an ENS name, not a raw address
+2. Automatically interpret it as: name.${ensDomain}
+3. Confirm with the user using the FULL ENS name including suffix
+
+EXAMPLES:
+✅ User says: "papajohnny" → You interpret as: "papajohnny.${ensDomain}"
+✅ User says: "alice" → You interpret as: "alice.${ensDomain}"
+✅ User says: "bob.eth" → Keep as-is (they specified L1 ENS)
+✅ User says: "0x1234..." → Keep as-is (it's a raw address)
+
+When confirming, ALWAYS show the full ENS name:
+✅ "Great! I'll set papajohnny.${ensDomain} as the recipient."
+❌ "Great! I'll set papajohnny as the recipient."
+</ens_name_handling>`;
+}
+
+// ============================================
 // Legacy Rental Prompt (keep for backward compatibility)
 // ============================================
 export const RENTAL_ASSISTANT_PROMPT = `You are a helpful AI assistant for Civitas, a platform that creates rental agreements on the blockchain.
@@ -56,10 +90,13 @@ Always confirm the details before finalizing.`;
 // ============================================
 // Generic Template Selection Prompt
 // ============================================
-function getTemplateSelectionPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
+function getTemplateSelectionPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
    const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const ensContext = getENSContext(chainId);
 
    return `${dateTimeContext}
+
+${ensContext}
 
 You are a friendly AI assistant for Civitas, a platform for creating smart contract agreements on the blockchain.
 
@@ -90,13 +127,15 @@ Be warm, patient, and guide them to the right solution!`;
 // ============================================
 // Template-Specific Prompts
 // ============================================
-function getRentVaultPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
+function getRentVaultPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
    const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
    const dateExamples = getDateConversionExamples(timezoneInfo);
+   const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
 User Connected Wallet: ${walletAddress || 'Not connected'}
+${ensContext}
 </system_context>
 
 <persona>
@@ -140,13 +179,15 @@ ${dateExamples}
 ${TOOL_USAGE_INSTRUCTIONS}`;
 }
 
-function getGroupBuyEscrowPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
+function getGroupBuyEscrowPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
    const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
    const dateExamples = getDateConversionExamples(timezoneInfo);
+   const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
 User Connected Wallet: ${walletAddress || 'Not connected'}
+${ensContext}
 </system_context>
 
 <persona>
@@ -191,12 +232,14 @@ ${dateExamples}
 ${TOOL_USAGE_INSTRUCTIONS}`;
 }
 
-function getStableAllowanceTreasuryPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
+function getStableAllowanceTreasuryPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
    const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
 User Connected Wallet: ${walletAddress || 'Not connected'}
+${ensContext}
 </system_context>
 
 <persona>
@@ -258,37 +301,37 @@ Guidelines:
 - Include relevant context from the contract type`;
 
 export function getNameGenerationPrompt(templateId: string): string {
-  switch (templateId) {
-    case 'rent-vault':
-    case 'RentVault':
-      return `${NAME_GENERATION_PROMPT}
+   switch (templateId) {
+      case 'rent-vault':
+      case 'RentVault':
+         return `${NAME_GENERATION_PROMPT}
 
 Template: Rent Vault (multi-tenant rent collection)
 - Include location or property type if mentioned in context
 - Include duration or amount hints if helpful
 - Examples: "seattle-1br-12mo", "downtown-studio", "oak-st-split"`;
 
-    case 'group-buy-escrow':
-    case 'GroupBuyEscrow':
-      return `${NAME_GENERATION_PROMPT}
+      case 'group-buy-escrow':
+      case 'GroupBuyEscrow':
+         return `${NAME_GENERATION_PROMPT}
 
 Template: Group Buy Escrow (group purchase with voting)
 - Include what's being purchased if mentioned
 - Include participant count if helpful
 - Examples: "macbook-3way", "group-tv-fund", "team-gear-buy"`;
 
-    case 'stable-allowance-treasury':
-    case 'StableAllowanceTreasury':
-      return `${NAME_GENERATION_PROMPT}
+      case 'stable-allowance-treasury':
+      case 'StableAllowanceTreasury':
+         return `${NAME_GENERATION_PROMPT}
 
 Template: Stable Allowance Treasury (periodic allowance payments)
 - Include the relationship or purpose if mentioned
 - Include the amount if helpful
 - Examples: "kid-allowance-50", "team-stipend", "monthly-grant"`;
 
-    default:
-      return NAME_GENERATION_PROMPT;
-  }
+      default:
+         return NAME_GENERATION_PROMPT;
+   }
 }
 
 // ============================================
@@ -297,16 +340,17 @@ Template: Stable Allowance Treasury (periodic allowance payments)
 export function getTemplatePrompt(
    templateId: string | null,
    timezoneInfo?: TimezoneInfo,
-   walletAddress?: string
+   walletAddress?: string,
+   chainId?: number
 ): string {
    switch (templateId) {
       case 'rent-vault':
-         return getRentVaultPrompt(timezoneInfo, walletAddress);
+         return getRentVaultPrompt(timezoneInfo, walletAddress, chainId);
       case 'group-buy-escrow':
-         return getGroupBuyEscrowPrompt(timezoneInfo, walletAddress);
+         return getGroupBuyEscrowPrompt(timezoneInfo, walletAddress, chainId);
       case 'stable-allowance-treasury':
-         return getStableAllowanceTreasuryPrompt(timezoneInfo, walletAddress);
+         return getStableAllowanceTreasuryPrompt(timezoneInfo, walletAddress, chainId);
       default:
-         return getTemplateSelectionPrompt(timezoneInfo, walletAddress);
+         return getTemplateSelectionPrompt(timezoneInfo, walletAddress, chainId);
    }
 }

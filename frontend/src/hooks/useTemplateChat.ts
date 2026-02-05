@@ -3,7 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { templateRegistry } from '@/lib/templates/registry';
 import type { TemplateDefinition } from '@/lib/templates/types';
 import { useUserTimezone } from './useUserTimezone';
@@ -19,8 +19,9 @@ export function useTemplateChat() {
   // Detect user's timezone from browser
   const timezone = useUserTimezone();
 
-  // Get connected wallet address
+  // Get connected wallet address and chain ID
   const { address: walletAddress } = useAccount();
+  const chainId = useChainId();
 
   // Active template is manual selection or AI detection
   const activeTemplate = manualTemplate || detectedTemplate;
@@ -32,6 +33,7 @@ export function useTemplateChat() {
         templateId: activeTemplate?.id,
         timezone, // Pass timezone to API
         walletAddress, // Pass connected wallet address
+        chainId, // Pass chain ID for network-aware ENS defaults
       },
     }),
   });
@@ -96,11 +98,12 @@ export function useTemplateChat() {
       const response = await fetch('/api/extract-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           messages,
           templateId: activeTemplate.id,
           timezone, // Pass timezone for date conversion
           walletAddress, // Pass wallet address for auto-fill
+          chainId, // Pass chain ID for network-aware ENS defaults
         }),
       });
 
@@ -153,22 +156,22 @@ export function useTemplateChat() {
     handleInputChange,
     handleSubmit,
     isLoading,
-    
+
     // Template state
     detectedTemplate,
     manualTemplate,
     activeTemplate,
     handleTemplateSelect,
-    
+
     // Config state
     extractedConfig,
     configCompleteness,
     isConfigComplete,
     isExtracting,
-    
+
     // Actions
     resetChat,
-    
+
     // Helpers
     getMessageText,
     getMessageToolCalls,
