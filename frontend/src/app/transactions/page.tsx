@@ -8,17 +8,9 @@ import TransactionDetail from '@/components/transactions/TransactionDetail';
 import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
-interface Transaction {
-  id: string;
-  event_type: string; // Derived from transaction_type
-  contract_address: string;
-  basename: string | null;
-  transaction_hash: string;
-  block_number: number;
-  event_data: any;
-  created_at: string; // Uses block_timestamp
-  role?: string;
-}
+import { Transaction } from '@/components/transactions/types';
+import TransactionList from '@/components/transactions/TransactionList';
+import { useTransactionSubscription } from '@/lib/supabase/hooks/useTransactionSubscription';
 
 const EVENT_TYPE_FILTERS = [
   { value: 'all', label: 'All Events' },
@@ -27,43 +19,39 @@ const EVENT_TYPE_FILTERS = [
   { value: 'withdrawal', label: 'Withdrawals' },
   { value: 'refund', label: 'Refunds' },
   { value: 'claim', label: 'Claims' },
+  { value: 'approval', label: 'Approvals' },
   { value: 'goal_reached', label: 'Goals Reached' },
   { value: 'funds_released', label: 'Funds Released' },
+  { value: 'delivery_confirmed', label: 'Deliveries Confirmed' },
+  { value: 'vote', label: 'Votes' },
+  { value: 'state_change', label: 'State Changes' },
 ] as const;
 
 export default function TransactionsPage() {
   const { address, isConnected } = useAccount();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { transactions, loading } = useTransactionSubscription(address);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    async function fetchTransactions() {
-      if (!address) {
-        setLoading(false);
-        return;
-      }
+    setIsMounted(true);
+  }, []);
 
-      try {
-        const response = await fetch(`/api/transactions?user_address=${address}`);
-        if (!response.ok) throw new Error('Failed to fetch transactions');
-
-        const data = await response.json();
-        setTransactions(data.transactions || []);
-
-        if (data.transactions?.length > 0) {
-          setSelectedTransaction(data.transactions[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
-      }
+  // Auto-select first transaction when transactions load
+  useEffect(() => {
+    if (transactions.length > 0 && !selectedTransaction) {
+      setSelectedTransaction(transactions[0]);
     }
+  }, [transactions, selectedTransaction]);
 
-    fetchTransactions();
-  }, [address]);
+  console.log('[TransactionsPage] Rendering with state:', {
+    isConnected,
+    loading,
+    itemCount: transactions.length,
+    filter,
+    address
+  });
 
   // Client-side filtering
   const filteredTransactions = filter === 'all'
@@ -72,13 +60,12 @@ export default function TransactionsPage() {
 
   const commandZone = (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header with Filter */}
       <div className="p-4 border-b-4 border-black bg-stark-white shrink-0">
         <h2 className="font-headline text-2xl uppercase tracking-tighter mb-4">
           Transaction History
         </h2>
-
-        {/* Filter Dropdown */}
+        {/* ... (Filter Dropdown and Live Feed Badge remain same) */}
         <div className="relative">
           <select
             value={filter}
@@ -104,55 +91,22 @@ export default function TransactionsPage() {
       </div>
 
       {/* Transaction List */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-        {!isConnected ? (
-          <div className="text-center my-12">
-            <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-12 inline-block">
-              <p className="font-display font-bold text-black mb-4">WALLET NOT CONNECTED</p>
-              <p className="font-display text-sm text-gray-600">
-                Connect your wallet to view transactions
-              </p>
-            </div>
-          </div>
-        ) : loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-stark-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-4 h-32 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : filteredTransactions.length === 0 ? (
-          <div className="text-center my-12">
-            <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-12 inline-block">
-              <p className="font-display font-bold text-black mb-4 uppercase">No Transactions Yet</p>
-              <p className="font-display text-sm text-gray-600 mb-6">
-                Create your first rental contract to see transactions here
-              </p>
-              <Link
-                href="/create"
-                className="inline-block bg-acid-lime border-2 border-black px-6 py-3 font-display font-bold uppercase shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] transition-all cursor-pointer"
-              >
-                Create Contract
-              </Link>
-            </div>
-          </div>
-        ) : (
-          filteredTransactions.map((transaction) => (
-            <TransactionCard
-              key={transaction.id}
-              event={transaction}
-              isSelected={selectedTransaction?.id === transaction.id}
-              onClick={() => setSelectedTransaction(transaction)}
-            />
-          ))
-        )}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <TransactionList
+          transactions={filteredTransactions}
+          loading={loading}
+          isConnected={isConnected}
+          selectedTransactionId={selectedTransaction?.id}
+          onSelectTransaction={setSelectedTransaction}
+        />
       </div>
     </div>
   );
+  // ...
 
   const executionZone = <TransactionDetail event={selectedTransaction} />;
+
+  if (!isMounted) return null;
 
   return <AppLayout activeNavItem="transactions" commandZone={commandZone} executionZone={executionZone} />;
 }

@@ -112,6 +112,36 @@ export const RENT_VAULT_ABI = [
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },
+  {
+    type: 'event',
+    name: 'Deposited',
+    inputs: [
+      { name: 'tenant', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'totalDeposited', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'RentFullyFunded',
+    inputs: [{ name: 'totalDeposited', type: 'uint256', indexed: false }],
+  },
+  {
+    type: 'event',
+    name: 'WithdrawnToLandlord',
+    inputs: [
+      { name: 'landlord', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Refunded',
+    inputs: [
+      { name: 'tenant', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
+  },
 ] as const
 
 // ─── GroupBuyEscrow ABI ───────────────────────────────────────────────────────
@@ -187,6 +217,64 @@ export const GROUP_BUY_ESCROW_ABI = [
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
+  {
+    type: 'event',
+    name: 'Deposited',
+    inputs: [
+      { name: 'participant', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'totalDeposited', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'GoalReached',
+    inputs: [
+      { name: 'totalDeposited', type: 'uint256', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Refunded',
+    inputs: [
+      { name: 'participant', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'DeliveryConfirmed',
+    inputs: [
+      { name: 'recipient', type: 'address', indexed: true },
+      { name: 'proof', type: 'string', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'VoteCast',
+    inputs: [
+      { name: 'participant', type: 'address', indexed: true },
+      { name: 'yesVotes', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'FundsReleased',
+    inputs: [
+      { name: 'purchaser', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'TimelockRefund',
+    inputs: [
+      { name: 'participant', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
+  },
 ] as const
 
 // ─── StableAllowanceTreasury ABI ──────────────────────────────────────────────
@@ -233,6 +321,49 @@ export const STABLE_ALLOWANCE_TREASURY_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint8', internalType: 'enum StableAllowanceTreasury.State' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    name: 'ApprovalIncremented',
+    inputs: [
+      { name: 'owner', type: 'address', indexed: true },
+      { name: 'newApprovalCount', type: 'uint256', indexed: false },
+      { name: 'incrementAmount', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'AllowanceClaimed',
+    inputs: [
+      { name: 'recipient', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'claimNumber', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Deposited',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'newBalance', type: 'uint256', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'StateChanged',
+    inputs: [
+      { name: 'oldState', type: 'uint8', indexed: false },
+      { name: 'newState', type: 'uint8', indexed: false }
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EmergencyWithdrawal',
+    inputs: [
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ],
   },
 ] as const
 

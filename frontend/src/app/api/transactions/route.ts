@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userAddress = searchParams.get('user_address');
     const eventType = searchParams.get('event_type');
+    const contractAddress = searchParams.get('contract_address');
 
     if (!userAddress) {
       return NextResponse.json(
@@ -39,6 +40,11 @@ export async function GET(request: NextRequest) {
       .eq('contracts.contract_participants.user_address', userAddress.toLowerCase())
       .order('block_timestamp', { ascending: false })
       .limit(50);
+
+    // Filter by contract_address if provided
+    if (contractAddress) {
+      query = query.eq('contract_address', contractAddress.toLowerCase());
+    }
 
     // Filter by transaction_type (mapped from frontend event_type)
     if (eventType && eventType !== 'all') {
@@ -72,6 +78,8 @@ export async function GET(request: NextRequest) {
       event_data: tx.event_data,
       created_at: tx.block_timestamp, // Use block_timestamp
       role: tx.contracts?.contract_participants?.[0]?.role || null,
+      from_address: tx.from_address || null,
+      template_id: tx.contracts?.template_id || null,
     })) || [];
 
     return NextResponse.json({

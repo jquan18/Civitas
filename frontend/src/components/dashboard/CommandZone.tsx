@@ -6,7 +6,7 @@ import type { ContractTemplate } from '@/lib/contracts/constants';
 interface GenericContract {
   id: string;
   contract_address: string;
-  template_id: ContractTemplate;
+  template_id: string;
   creator_address: string;
   chain_id: number;
   state: number;

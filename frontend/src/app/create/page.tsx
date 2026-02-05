@@ -133,16 +133,96 @@ export default function CreatePage() {
         <div className="ml-[88px] h-full flex">
           {/* Zone B: Command Center (Center - 45% of remaining space) */}
           <div className="w-[45%] flex flex-col bg-white border-r-[3px] border-black">
-          {/* Marquee Ticker */}
-          <MarqueeTicker />
+            {/* Marquee Ticker */}
+            <MarqueeTicker />
 
-          {/* Template Selector (if no template selected) */}
-          {!activeTemplate && (
-            <>
-              <div className="flex-1 overflow-y-auto">
-                {/* Show messages if there's a conversation */}
-                {messages.length > 0 && (
-                  <div className="p-8 border-b-[3px] border-black pattern-grid">
+            {/* Template Selector (if no template selected) */}
+            {!activeTemplate && (
+              <>
+                <div className="flex-1 overflow-y-auto">
+                  {/* Show messages if there's a conversation */}
+                  {messages.length > 0 && (
+                    <div className="p-8 border-b-[3px] border-black pattern-grid">
+                      {messages.map((message) => {
+                        const extractedText = getMessageText(message);
+                        return (
+                          <div key={message.id} className="relative z-10">
+                            <ChatBubble
+                              role={message.role === 'user' ? 'user' : 'agent'}
+                              message={extractedText}
+                              isLoading={isLoading}
+                            />
+                          </div>
+                        );
+                      })}
+
+                      {isLoading && (
+                        <div className="flex justify-start mb-6 relative z-10">
+                          <div className="bg-stark-white border-[3px] border-black px-6 py-5 shadow-[3px_3px_0px_#000]">
+                            <LoadingSquares size="md" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Auto-scroll anchor */}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+
+                  {/* Template Selector */}
+                  <TemplateSelector
+                    templates={allTemplates}
+                    onSelect={handleTemplateSelect}
+                    detectedTemplate={detectedTemplate}
+                  />
+                </div>
+
+                {/* Input Area - Always visible for AI detection */}
+                <div className="border-t-[3px] border-black p-4 bg-paper-cream shrink-0">
+                  <TerminalInput
+                    value={input}
+                    onChange={handleInputChange}
+                    onSubmit={onSubmit}
+                    placeholder="Describe what you want to create..."
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Chat Interface (if template selected) */}
+            {activeTemplate && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Chat Header */}
+                <div className="bg-warning-yellow border-b-[3px] border-black px-6 py-3 shrink-0">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-headline text-xl uppercase tracking-wide text-black">
+                      {activeTemplate.name}
+                    </h2>
+                    <button
+                      onClick={() => handleTemplateSelect('')}
+                      className="font-mono text-sm underline hover:no-underline"
+                    >
+                      Change Template
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto p-8 relative pattern-grid">
+                  {messages.length === 0 && (
+                    <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] mx-auto max-w-lg mt-12 p-8">
+                      <div className="text-center space-y-4">
+                        <h3 className="font-headline text-3xl uppercase text-black leading-tight">
+                          LET&apos;S BUILD
+                        </h3>
+                        <p className="font-display text-base text-black leading-relaxed">
+                          Tell me about your {activeTemplate.name.toLowerCase()} and I&apos;ll help you create it on-chain.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {messages.map((message) => {
                     const extractedText = getMessageText(message);
                     return (
@@ -155,111 +235,31 @@ export default function CreatePage() {
                       </div>
                     );
                   })}
-                    
-                    {isLoading && (
-                      <div className="flex justify-start mb-6 relative z-10">
-                        <div className="bg-stark-white border-[3px] border-black px-6 py-5 shadow-[3px_3px_0px_#000]">
-                          <LoadingSquares size="md" />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Auto-scroll anchor */}
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
-                
-                {/* Template Selector */}
-                <TemplateSelector
-                  templates={allTemplates}
-                  onSelect={handleTemplateSelect}
-                  detectedTemplate={detectedTemplate}
-                />
-              </div>
-              
-              {/* Input Area - Always visible for AI detection */}
-              <div className="border-t-[3px] border-black p-4 bg-paper-cream shrink-0">
-                <TerminalInput
-                  value={input}
-                  onChange={handleInputChange}
-                  onSubmit={onSubmit}
-                  placeholder="Describe what you want to create..."
-                  disabled={isLoading}
-                />
-              </div>
-            </>
-          )}
 
-          {/* Chat Interface (if template selected) */}
-          {activeTemplate && (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Chat Header */}
-              <div className="bg-warning-yellow border-b-[3px] border-black px-6 py-3 shrink-0">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-headline text-xl uppercase tracking-wide text-black">
-                    {activeTemplate.name}
-                  </h2>
-                  <button
-                    onClick={() => handleTemplateSelect('')}
-                    className="font-mono text-sm underline hover:no-underline"
-                  >
-                    Change Template
-                  </button>
+                  {isLoading && (
+                    <div className="flex justify-start mb-6 relative z-10">
+                      <div className="bg-stark-white border-[3px] border-black px-6 py-5 shadow-[3px_3px_0px_#000]">
+                        <LoadingSquares size="md" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Auto-scroll anchor */}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Area */}
+                <div className="border-t-[3px] border-black p-4 bg-paper-cream shrink-0">
+                  <TerminalInput
+                    value={input}
+                    onChange={handleInputChange}
+                    onSubmit={onSubmit}
+                    placeholder="Describe your agreement..."
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
-
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-8 relative pattern-grid">
-                {messages.length === 0 && (
-                  <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] mx-auto max-w-lg mt-12 p-8">
-                    <div className="text-center space-y-4">
-                      <h3 className="font-headline text-3xl uppercase text-black leading-tight">
-                        LET&apos;S BUILD
-                      </h3>
-                      <p className="font-display text-base text-black leading-relaxed">
-                        Tell me about your {activeTemplate.name.toLowerCase()} and I&apos;ll help you create it on-chain.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {messages.map((message) => {
-                  const extractedText = getMessageText(message);
-                  return (
-                    <div key={message.id} className="relative z-10">
-                      <ChatBubble
-                        role={message.role === 'user' ? 'user' : 'agent'}
-                        message={extractedText}
-                        isLoading={isLoading}
-                      />
-                    </div>
-                  );
-                })}
-
-                {isLoading && (
-                  <div className="flex justify-start mb-6 relative z-10">
-                    <div className="bg-stark-white border-[3px] border-black px-6 py-5 shadow-[3px_3px_0px_#000]">
-                      <LoadingSquares size="md" />
-                    </div>
-                  </div>
-                )}
-                
-                {/* Auto-scroll anchor */}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input Area */}
-              <div className="border-t-[3px] border-black p-4 bg-paper-cream shrink-0">
-                <TerminalInput
-                  value={input}
-                  onChange={handleInputChange}
-                  onSubmit={onSubmit}
-                  placeholder="Describe your agreement..."
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-          )}
+            )}
           </div>
 
           {/* Zone C: Execution Deck (Right - Remaining 55%) */}
@@ -273,144 +273,137 @@ export default function CreatePage() {
               opacity: 0.95,
             }}
           >
-          {activeTemplate && extractedConfig && (
-            <>
-              <ContractReceiptCard
-                template={activeTemplate}
-                config={extractedConfig}
-                onDeploy={handleDeploy}
-                isDeploying={isDeploying}
-                isSuccess={isSuccess}
-                deployedAddress={deployedAddress}
-              />
+            {activeTemplate && extractedConfig && (
+              <>
+                <ContractReceiptCard
+                  template={activeTemplate}
+                  config={extractedConfig}
+                  onDeploy={handleDeploy}
+                  isDeploying={isDeploying}
+                  isSuccess={isSuccess}
+                  deployedAddress={deployedAddress}
+                />
 
-              {/* Deployment Status Messages */}
-              {deploymentError && (
-                <div className="mt-4">
-                  <StatusBanner variant="error" onDismiss={() => setDeploymentError(null)}>
-                    {deploymentError}
-                  </StatusBanner>
-                </div>
-              )}
+                {/* Deployment Status Messages */}
+                {deploymentError && (
+                  <div className="mt-4">
+                    <StatusBanner variant="error" onDismiss={() => setDeploymentError(null)}>
+                      {deploymentError}
+                    </StatusBanner>
+                  </div>
+                )}
 
-              {deployError && (
-                <div className="mt-4">
-                  <StatusBanner variant="error">
-                    Transaction failed: {deployError.message}
-                  </StatusBanner>
-                </div>
-              )}
+                {deployError && (
+                  <div className="mt-4">
+                    <StatusBanner variant="error">
+                      Transaction failed: {deployError.message}
+                    </StatusBanner>
+                  </div>
+                )}
 
-              {/* ENS Resolution Status */}
-              {isResolvingENS && (
-                <div className="mt-4">
-                  <StatusBanner variant="info">
-                    Resolving ENS names...
-                  </StatusBanner>
-                </div>
-              )}
+                {/* ENS Resolution Status */}
+                {isResolvingENS && (
+                  <div className="mt-4">
+                    <StatusBanner variant="info">
+                      Resolving ENS names...
+                    </StatusBanner>
+                  </div>
+                )}
 
-              {ensResolutionReport && ensResolutionReport.success && ensResolutionReport.resolutions.size > 0 && (
-                <div className="mt-4">
-                  <div className="bg-white border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
-                    <p className="font-mono text-xs uppercase font-bold opacity-60 mb-2">Resolved Addresses</p>
-                    <div className="space-y-1">
-                      {Array.from(ensResolutionReport.resolutions.entries()).map(([input, result]) => (
-                        <div key={input} className="font-mono text-sm flex items-center gap-2">
-                          {isENSName(input) ? (
-                            <>
-                              <span className="text-void-black">{input}</span>
-                              <span className="text-gray-400">→</span>
-                              <span className="text-green-600">{formatAddress(result.address || '')}</span>
-                              <span className="text-green-500">✓</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-gray-500">{formatAddress(input)}</span>
-                              <span className="text-gray-400">(raw)</span>
-                            </>
-                          )}
-                        </div>
-                      ))}
+                {ensResolutionReport && ensResolutionReport.success && ensResolutionReport.resolutions.size > 0 && (
+                  <div className="mt-4">
+                    <div className="bg-white border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
+                      <p className="font-mono text-xs uppercase font-bold opacity-60 mb-2">Resolved Addresses</p>
+                      <div className="space-y-1">
+                        {Array.from(ensResolutionReport.resolutions.entries()).map(([input, result]) => (
+                          <div key={input} className="font-mono text-sm flex items-center gap-2">
+                            {isENSName(input) ? (
+                              <>
+                                <span className="text-void-black">{input}</span>
+                                <span className="text-gray-400">→</span>
+                                <span className="text-green-600">{formatAddress(result.address || '')}</span>
+                                <span className="text-green-500">✓</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-gray-500">{formatAddress(input)}</span>
+                                <span className="text-gray-400">(raw)</span>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {isPending && (
-                <div className="mt-4">
-                  <StatusBanner variant="warning">
-                    Waiting for wallet confirmation...
-                  </StatusBanner>
-                </div>
-              )}
-
-              {isConfirming && (
-                <div className="mt-4">
-                  <StatusBanner variant="info">
-                    Transaction submitted! Waiting for confirmation...
-                  </StatusBanner>
-                </div>
-              )}
-
-              {/* ENS Registration Status */}
-              {ensStep === 'generating' && (
-                <div className="mt-4">
-                  <StatusBanner variant="info">
-                    Generating ENS name...
-                  </StatusBanner>
-                </div>
-              )}
-
-              {ensStep === 'registering' && (
-                <div className="mt-4">
-                  <StatusBanner variant="warning">
-                    Registering ENS name... (sign transaction)
-                  </StatusBanner>
-                </div>
-              )}
-
-              {ensStep === 'done' && ensName && (
-                <div className="mt-4">
-                  <div className="bg-[#CCFF00] border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
-                    <p className="font-mono text-xs uppercase font-bold opacity-60 mb-1">ENS Registered</p>
-                    <p className="font-mono text-sm font-bold">
-                      {ensName}.{CIVITAS_ENS_DOMAIN}
-                    </p>
+                {/* Deployment Progress */}
+                {isDeploying && !isSuccess && (
+                  <div className="mt-4">
+                    <StatusBanner variant="info">
+                      Deploying contract... Please wait for confirmation.
+                    </StatusBanner>
                   </div>
-                </div>
-              )}
+                )}
 
-              {ensStep === 'skipped' && ensError && (
-                <div className="mt-4">
-                  <StatusBanner variant="warning">
-                    ENS registration skipped: {ensError}
-                  </StatusBanner>
-                </div>
-              )}
-            </>
-          )}
+                {/* ENS Registration Status */}
+                {ensStep === 'generating' && (
+                  <div className="mt-4">
+                    <StatusBanner variant="info">
+                      Generating ENS name...
+                    </StatusBanner>
+                  </div>
+                )}
 
-          {!activeTemplate && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="font-black text-4xl uppercase mb-4 opacity-20">
+                {ensStep === 'registering' && (
+                  <div className="mt-4">
+                    <StatusBanner variant="warning">
+                      Registering ENS name... (sign transaction)
+                    </StatusBanner>
+                  </div>
+                )}
+
+                {ensStep === 'done' && ensName && (
+                  <div className="mt-4">
+                    <div className="bg-[#CCFF00] border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
+                      <p className="font-mono text-xs uppercase font-bold opacity-60 mb-1">ENS Registered</p>
+                      <p className="font-mono text-sm font-bold">
+                        {ensName}.{CIVITAS_ENS_DOMAIN}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {ensStep === 'skipped' && ensError && (
+                  <div className="mt-4">
+                    <StatusBanner variant="warning">
+                      ENS registration skipped: {ensError}
+                    </StatusBanner>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!activeTemplate && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="font-black text-4xl uppercase mb-4 opacity-20">
                   /// STANDBY ///
+                  </div>
+                  <p className="font-mono text-sm opacity-40">
+                    SELECT TEMPLATE TO BEGIN
+                  </p>
                 </div>
-                <p className="font-mono text-sm opacity-40">
-                  SELECT TEMPLATE TO BEGIN
-                </p>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTemplate && !extractedConfig && (
-            <div className="flex items-center justify-center h-full">
-              <StatusBanner variant="info">
-                Start chatting to configure your {activeTemplate.name.toLowerCase()}
-              </StatusBanner>
-            </div>
-          )}
+            {activeTemplate && !extractedConfig && (
+              <div className="flex items-center justify-center h-full">
+                <StatusBanner variant="info">
+                  Start chatting to configure your {activeTemplate.name.toLowerCase()}
+                </StatusBanner>
+              </div>
+            )}
           </div>
         </div>
       </div>

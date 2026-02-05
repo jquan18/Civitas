@@ -107,6 +107,20 @@ router.patch('/:address/sync', asyncHandler(async (req: Request, res: Response) 
 
   const contract = await syncGenericContract(address.toLowerCase() as Address)
 
+  // Also sync events in parallel
+  if (contract && contract.template_id) {
+    // Run in background properly to avoid timeout, or await if we want user to see results immediately
+    // For manual "Sync" button, awaiting is better UX so list updates immediately
+    try {
+      // Dynamic import to avoid circular dependency issues if any
+      const { syncContractEvents } = await import('@/services/blockchain/events')
+      await syncContractEvents(address.toLowerCase(), contract.template_id)
+    } catch (e) {
+      logger.error('Failed to sync events during manual sync', { error: e, address })
+      // Don't fail the whole request, as state sync might have succeeded
+    }
+  }
+
   res.json({ contract })
 }))
 
