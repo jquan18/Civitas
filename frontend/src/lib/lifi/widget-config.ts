@@ -50,7 +50,7 @@ export function createWidgetConfig({
     hiddenUI: ['toAddress'],
 
     // Disable destination chain/token selection
-    disabledUI: ['toToken', 'toChain'],
+    disabledUI: ['toToken'],
 
     // Build settings
     buildSwapUrl: true,

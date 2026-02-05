@@ -23,6 +23,7 @@ export interface TemplateDefinition {
   // ============================================
   id: string // 'rent-vault', 'group-buy-escrow', 'stable-allowance-treasury'
   name: string
+  contractName?: string // Name of the Solidity contract (e.g., 'RentVault')
   description: string
   category: 'finance' | 'governance' | 'escrow' | 'utility'
   

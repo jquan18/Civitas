@@ -471,3 +471,68 @@ p, span, div {
   text-decoration-thickness: 2px;
   opacity: 0.7;
 }
+
+/* 3D Card Flip Animation */
+.flip-container {
+  perspective: 1000px;
+  position: relative;
+  width: 100%;
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-card-face {
+  width: 100%;
+  backface-visibility: hidden;
+  position: relative;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .flip-card {
+    transition: none;
+  }
+  .flip-card.flipped {
+    transform: none;
+  }
+  .flip-card-back {
+    position: relative;
+    transform: none;
+    margin-top: 1rem;
+  }
+}
+
+/* Syntax Highlighting (Light Theme) */
+.code-syntax {
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  color: #1E293B;
+}
+
+.code-syntax .keyword { color: #2563EB; font-weight: 700; }
+.code-syntax .comment { color: #64748B; font-style: italic; }
+.code-syntax .string { color: #16A34A; }
+.code-syntax .number { color: #EA580C; }
+.code-syntax .type { color: #9333EA; }
+.code-syntax .function { color: #0891B2; font-weight: 700; }
+.code-syntax .operator { color: #1E293B; }

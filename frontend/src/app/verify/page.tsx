@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useReadContract, useChainId } from 'wagmi';
 import { CIVITAS_FACTORY_ABI, ENS_L2_RESOLVER_ABI } from '@/lib/contracts/abis';
 import {
@@ -11,9 +11,10 @@ import {
 } from '@/lib/contracts/constants';
 import { formatUnits } from 'viem';
 import { useSearchParams } from 'next/navigation';
-import { Search, Shield, ExternalLink, Copy, Check } from 'lucide-react';
+import { Search, Shield, ExternalLink, Copy, Check, ChevronDown } from 'lucide-react';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
+import { resolveENSServerSide, isENSName, isAddress } from '@/lib/ens/resolver';
 
 const RECORD_KEYS = [
   { key: 'contract.type', label: 'Contract Type' },
@@ -84,22 +85,81 @@ function RecordDisplay({
   );
 }
 
-function VerifyByName({ name }: { name: string }) {
+function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId: number }) {
   const chainId = useChainId();
-  const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
+  const factoryAddress = CIVITAS_FACTORY_ADDRESS[selectedChainId];
   const [copied, setCopied] = useState(false);
-  const ensDomain = getCivitasEnsDomain(chainId);
+  const [isResolvingENS, setIsResolvingENS] = useState(false);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+  const [processedInput, setProcessedInput] = useState<{
+    basename: string;
+    displayName: string;
+  } | null>(null);
+  const ensDomain = getCivitasEnsDomain(selectedChainId);
 
-  // Strip the domain suffix to get the basename for contract lookup
-  const basename = name.replace(`.${ensDomain}`, '');
+  // Process input on mount or when name/selectedChainId changes
+  useEffect(() => {
+    const processInput = async () => {
+      setIsResolvingENS(true);
+      setResolutionError(null);
+      setProcessedInput(null);
+
+      try {
+        // Case 1: Raw address - use directly for lookup
+        if (isAddress(name)) {
+          setProcessedInput({
+            basename: name,
+            displayName: name,
+          });
+          setIsResolvingENS(false);
+          return;
+        }
+
+        // Case 2: Full ENS name - resolve to address first
+        if (isENSName(name)) {
+          // Resolve ENS name via server-side (supports all ENS types)
+          const resolution = await resolveENSServerSide(name);
+
+          if (!resolution.address) {
+            setResolutionError(resolution.error || 'ENS name could not be resolved');
+            setIsResolvingENS(false);
+            return;
+          }
+
+          // Use the resolved address for contract lookup
+          // Store the ENS name as display name for better UX
+          setProcessedInput({
+            basename: resolution.address, // Use address for lookup
+            displayName: name, // Keep ENS name for display
+          });
+          setIsResolvingENS(false);
+          return;
+        }
+
+        // Case 3: Basename only - assume Civitas basename, append domain
+        const expectedDomain = getCivitasEnsDomain(selectedChainId);
+        setProcessedInput({
+          basename: name,
+          displayName: `${name}.${expectedDomain}`,
+        });
+        setIsResolvingENS(false);
+      } catch (error: any) {
+        console.error('Input processing error:', error);
+        setResolutionError(error.message || 'Failed to process input');
+        setIsResolvingENS(false);
+      }
+    };
+
+    processInput();
+  }, [name, selectedChainId, ensDomain]);
 
   // Resolve contract address from basename
   const { data: contractAddress, isLoading: isResolving } = useReadContract({
     address: factoryAddress,
     abi: CIVITAS_FACTORY_ABI,
     functionName: 'getContractByBasename',
-    args: [basename],
-    query: { enabled: !!factoryAddress },
+    args: processedInput ? [processedInput.basename] : undefined,
+    query: { enabled: !!processedInput && !!factoryAddress },
   });
 
   // Calculate ENS node
@@ -107,11 +167,11 @@ function VerifyByName({ name }: { name: string }) {
     address: factoryAddress,
     abi: CIVITAS_FACTORY_ABI,
     functionName: 'calculateENSNode',
-    args: [basename],
-    query: { enabled: !!factoryAddress },
+    args: processedInput ? [processedInput.basename] : undefined,
+    query: { enabled: !!processedInput && !!factoryAddress },
   });
 
-  const blockExplorer = CHAIN_CONFIG[chainId as keyof typeof CHAIN_CONFIG]?.blockExplorer || 'https://basescan.org';
+  const blockExplorer = CHAIN_CONFIG[selectedChainId as keyof typeof CHAIN_CONFIG]?.blockExplorer || 'https://basescan.org';
 
   const handleCopy = () => {
     if (contractAddress) {
@@ -121,12 +181,37 @@ function VerifyByName({ name }: { name: string }) {
     }
   };
 
-  if (isResolving) {
+  if (isResolvingENS) {
     return (
       <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-8">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" />
           <p className="font-display font-bold uppercase">Resolving ENS Name...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (resolutionError) {
+    return (
+      <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-8">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-warning-yellow border-3 border-black flex items-center justify-center">
+            <span className="font-headline text-black text-3xl">!</span>
+          </div>
+          <p className="font-display font-bold text-xl uppercase mb-2">Resolution Error</p>
+          <p className="font-mono text-sm text-gray-600">{resolutionError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isResolving) {
+    return (
+      <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-8">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" />
+          <p className="font-display font-bold uppercase">Looking up contract...</p>
         </div>
       </div>
     );
@@ -141,7 +226,7 @@ function VerifyByName({ name }: { name: string }) {
           </div>
           <p className="font-display font-bold text-xl uppercase mb-2">Not Found</p>
           <p className="font-mono text-sm text-gray-500">
-            No contract registered for &quot;{name}&quot;
+            No contract registered for &quot;{processedInput?.displayName || name}&quot;
           </p>
         </div>
       </div>
@@ -158,7 +243,7 @@ function VerifyByName({ name }: { name: string }) {
           </div>
           <div>
             <p className="font-mono text-xs uppercase font-bold text-black/60">Verified ENS Identity</p>
-            <p className="font-display font-bold text-xl uppercase">{name}</p>
+            <p className="font-display font-bold text-xl uppercase">{processedInput?.displayName || name}</p>
           </div>
         </div>
 
@@ -166,7 +251,7 @@ function VerifyByName({ name }: { name: string }) {
           <span className="font-mono text-sm flex-1 truncate">{contractAddress}</span>
           <button
             onClick={handleCopy}
-            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors"
+            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors cursor-pointer"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
@@ -174,7 +259,7 @@ function VerifyByName({ name }: { name: string }) {
             href={`${blockExplorer}/address/${contractAddress}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors"
+            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors cursor-pointer"
           >
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -211,12 +296,26 @@ function VerifyPageContent() {
   const initialName = searchParams.get('name') || '';
   const [searchInput, setSearchInput] = useState(initialName);
   const [activeQuery, setActiveQuery] = useState(initialName);
-  const ensDomain = getCivitasEnsDomain(chainId);
+  const [selectedChainId, setSelectedChainId] = useState(chainId);
+  const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
+  const ensDomain = getCivitasEnsDomain(selectedChainId);
+
+  // Update selectedChainId when wallet network changes
+  useEffect(() => {
+    setSelectedChainId(chainId);
+  }, [chainId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveQuery(searchInput.trim());
   };
+
+  const networks = [
+    { id: 84532, name: 'Base Sepolia', domain: 'basetest.eth' },
+    { id: 8453, name: 'Base Mainnet', domain: 'base.eth' },
+  ];
+
+  const selectedNetwork = networks.find(n => n.id === selectedChainId) || networks[0];
 
   return (
     <div className="min-h-screen bg-paper-cream h-screen overflow-hidden relative">
@@ -243,19 +342,55 @@ function VerifyPageContent() {
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-3xl mx-auto">
-            {/* Search */}
+            {/* Search with Network Selector */}
             <form onSubmit={handleSearch} className="mb-8">
               <div className="flex gap-0">
+                {/* Network Selector Dropdown */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkDropdownOpen(!networkDropdownOpen)}
+                    className="border-4 border-black border-r-0 px-4 py-3 font-mono text-sm uppercase bg-white hover:bg-acid-lime transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <span className="font-bold">{selectedNetwork.name}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${networkDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {networkDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-full min-w-[200px] bg-white border-4 border-black shadow-[4px_4px_0px_#000] z-10">
+                      {networks.map((network) => (
+                        <button
+                          key={network.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedChainId(network.id);
+                            setNetworkDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 font-mono text-sm uppercase hover:bg-acid-lime transition-colors cursor-pointer ${selectedChainId === network.id ? 'bg-acid-lime font-bold' : ''
+                            }`}
+                        >
+                          <div className="font-bold">{network.name}</div>
+                          <div className="text-xs text-gray-500 normal-case">.{network.domain}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Search Input */}
                 <input
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={`e.g. downtown-studio-a3f9.${ensDomain} or 0x...`}
+                  placeholder={`e.g. papajohnny.basetest.eth, downtown-studio-a3f9, or 0x...`}
                   className="flex-1 border-4 border-black border-r-0 px-4 py-3 font-mono text-sm bg-white focus:outline-none focus:ring-2 focus:ring-acid-lime"
                 />
+
+                {/* Search Button */}
                 <button
                   type="submit"
-                  className="bg-void-black text-white border-4 border-black px-6 py-3 font-display font-bold uppercase hover:bg-acid-lime hover:text-black transition-colors shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                  className="bg-void-black text-white border-4 border-black px-6 py-3 font-display font-bold uppercase hover:bg-acid-lime hover:text-black transition-colors shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer"
                 >
                   <Search className="w-5 h-5" />
                 </button>
@@ -264,7 +399,7 @@ function VerifyPageContent() {
 
             {/* Results */}
             {activeQuery ? (
-              <VerifyByName name={activeQuery} />
+              <VerifyByName name={activeQuery} selectedChainId={selectedChainId} />
             ) : (
               <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-12">
                 <div className="text-center">

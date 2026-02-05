@@ -12,6 +12,7 @@ import { formatUnits } from 'viem'
 const RentVaultTemplate: TemplateDefinition = {
   id: 'rent-vault',
   name: 'Rent Vault',
+  contractName: 'RentVault',
   description: 'Multi-tenant rent collection with share-based contributions. Perfect for roommates splitting rent.',
   category: 'finance',
   
@@ -134,6 +135,7 @@ const RentVaultTemplate: TemplateDefinition = {
 const GroupBuyEscrowTemplate: TemplateDefinition = {
   id: 'group-buy-escrow',
   name: 'Group Buy Escrow',
+  contractName: 'GroupBuyEscrow',
   description: 'Group purchase with majority vote release. Pool funds for a shared purchase with delivery confirmation.',
   category: 'escrow',
   
