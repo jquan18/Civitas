@@ -154,6 +154,18 @@ export const CIVITAS_FACTORY_ABI = [
     stateMutability: 'pure',
   },
   {
+    type: 'function',
+    name: 'setContractENSRecords',
+    inputs: [
+      { name: 'contractAddress', type: 'address', internalType: 'address' },
+      { name: 'basename', type: 'string', internalType: 'string' },
+      { name: 'keys', type: 'string[]', internalType: 'string[]' },
+      { name: 'values', type: 'string[]', internalType: 'string[]' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
     type: 'event',
     name: 'ENSRecordsSet',
     inputs: [
@@ -322,6 +334,18 @@ export const RENT_VAULT_ABI = [
     name: 'tenantMaxContribution',
     inputs: [{ name: 'tenant', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getENSMetadata',
+    inputs: [],
+    outputs: [
+      { name: 'contractType', type: 'string', internalType: 'string' },
+      { name: 'status', type: 'string', internalType: 'string' },
+      { name: 'keys', type: 'string[]', internalType: 'string[]' },
+      { name: 'values', type: 'string[]', internalType: 'string[]' },
+    ],
     stateMutability: 'view',
   },
 ] as const;
@@ -499,6 +523,18 @@ export const GROUP_BUY_ESCROW_ABI = [
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    name: 'getENSMetadata',
+    inputs: [],
+    outputs: [
+      { name: 'contractType', type: 'string', internalType: 'string' },
+      { name: 'status', type: 'string', internalType: 'string' },
+      { name: 'keys', type: 'string[]', internalType: 'string[]' },
+      { name: 'values', type: 'string[]', internalType: 'string[]' },
+    ],
+    stateMutability: 'view',
+  },
 ] as const;
 
 // ============================================================================
@@ -625,6 +661,18 @@ export const STABLE_ALLOWANCE_TREASURY_ABI = [
     name: 'unclaimedAllowances',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getENSMetadata',
+    inputs: [],
+    outputs: [
+      { name: 'contractType', type: 'string', internalType: 'string' },
+      { name: 'status', type: 'string', internalType: 'string' },
+      { name: 'keys', type: 'string[]', internalType: 'string[]' },
+      { name: 'values', type: 'string[]', internalType: 'string[]' },
+    ],
     stateMutability: 'view',
   },
 ] as const;

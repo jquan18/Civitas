@@ -11,6 +11,7 @@ import { DollarSign, RefreshCw, AlertTriangle, Shield, ExternalLink } from 'luci
 import { RENT_VAULT_ABI } from '@/lib/contracts/abis';
 import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface LandlordViewProps {
   contract: AllContracts;
@@ -252,6 +253,16 @@ export default function LandlordView({ contract, userAddress, onSync }: Landlord
               <DollarSign className="w-10 h-10 text-void-black group-hover:rotate-12 transition-transform" />
             </div>
           </TactileButton>
+        )}
+
+        {/* Sync ENS Records */}
+        {contract.basename && (
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="RentVault"
+            chainId={contract.chain_id || chainId}
+          />
         )}
 
         {/* Refund Button */}

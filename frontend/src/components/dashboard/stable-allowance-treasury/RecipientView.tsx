@@ -10,6 +10,7 @@ import { Gift, AlertCircle, Shield, ExternalLink } from 'lucide-react';
 import { STABLE_ALLOWANCE_TREASURY_ABI } from '@/lib/contracts/abis';
 import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface RecipientViewProps {
   contract: AllContracts;
@@ -266,6 +267,18 @@ export default function RecipientView({ contract, userAddress, onSync }: Recipie
               {state === 0 && unclaimed > 0 && balance < allowancePerIncrement && 'Insufficient Treasury Balance'}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Sync ENS Records */}
+      {contract.basename && (
+        <div className="w-full max-w-md relative z-10 mt-4">
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="StableAllowanceTreasury"
+            chainId={contract.chain_id || chainId}
+          />
         </div>
       )}
       </div>

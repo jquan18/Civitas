@@ -256,26 +256,44 @@ export function useCivitasContractDeploy() {
     params: DeploymentParams,
     creatorAddress: string,
   ): { keys: string[]; values: string[] } => {
-    const keys: string[] = ['contract.type', 'contract.status', 'contract.creator'];
-    const values: string[] = [template, 'deployed', creatorAddress];
+    const keys: string[] = ['contract.type', 'contract.status', 'contract.creator', 'contract.version'];
+    const values: string[] = [template, 'deployed', creatorAddress, '1.0.0'];
 
     switch (template) {
       case CONTRACT_TEMPLATES.RENT_VAULT: {
         const p = params as RentVaultParams;
-        keys.push('contract.rent.amount', 'contract.rent.dueDate');
-        values.push(p.rentAmount.toString(), p.dueDate.toString());
+        keys.push(
+          'contract.rent.amount', 'contract.rent.dueDate',
+          'contract.recipient', 'legal.type',
+        );
+        values.push(
+          p.rentAmount.toString(), p.dueDate.toString(),
+          p.recipient, 'rental_agreement',
+        );
         break;
       }
       case CONTRACT_TEMPLATES.GROUP_BUY_ESCROW: {
         const p = params as GroupBuyEscrowParams;
-        keys.push('contract.escrow.goal', 'contract.escrow.expiry');
-        values.push(p.fundingGoal.toString(), p.expiryDate.toString());
+        keys.push(
+          'contract.escrow.goal', 'contract.escrow.expiry',
+          'contract.recipient', 'legal.type',
+        );
+        values.push(
+          p.fundingGoal.toString(), p.expiryDate.toString(),
+          p.recipient, 'escrow_agreement',
+        );
         break;
       }
       case CONTRACT_TEMPLATES.STABLE_ALLOWANCE_TREASURY: {
         const p = params as StableAllowanceTreasuryParams;
-        keys.push('contract.allowance.amount');
-        values.push(p.allowancePerIncrement.toString());
+        keys.push(
+          'contract.allowance.amount',
+          'contract.owner', 'contract.recipient', 'legal.type',
+        );
+        values.push(
+          p.allowancePerIncrement.toString(),
+          p.owner, p.recipient, 'treasury_agreement',
+        );
         break;
       }
     }

@@ -11,36 +11,99 @@ import {
 } from '@/lib/contracts/constants';
 import { formatUnits } from 'viem';
 import { useSearchParams } from 'next/navigation';
-import { Search, Shield, ExternalLink, Copy, Check, ChevronDown, User, FileQuestion } from 'lucide-react';
+import { Search, Shield, ExternalLink, Copy, Check, ChevronDown, User, FileQuestion, Database } from 'lucide-react';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
 import { resolveENSServerSide, isENSName, isAddress } from '@/lib/ens/resolver';
 
-const RECORD_KEYS = [
-  { key: 'contract.type', label: 'Contract Type' },
-  { key: 'contract.status', label: 'Status' },
-  { key: 'contract.creator', label: 'Creator' },
-  { key: 'contract.rent.amount', label: 'Rent Amount', isAmount: true },
-  { key: 'contract.rent.dueDate', label: 'Rent Due Date', isDate: true },
-  { key: 'contract.escrow.goal', label: 'Escrow Goal', isAmount: true },
-  { key: 'contract.escrow.expiry', label: 'Escrow Expiry', isDate: true },
-  { key: 'contract.allowance.amount', label: 'Allowance Amount', isAmount: true },
+// ============================================================================
+// All ENS record keys across all contract templates
+// Records that don't exist for a given contract simply return null and are hidden
+// ============================================================================
+const RECORD_KEYS: {
+  key: string;
+  label: string;
+  isAmount?: boolean;
+  isDate?: boolean;
+  isAddr?: boolean;
+  section: 'identity' | 'financial' | 'status' | 'legal';
+}[] = [
+  // Identity
+  { key: 'contract.type', label: 'Contract Type', section: 'identity' },
+  { key: 'contract.status', label: 'Status', section: 'identity' },
+  { key: 'contract.version', label: 'Version', section: 'identity' },
+  { key: 'contract.creator', label: 'Creator', isAddr: true, section: 'identity' },
+  { key: 'contract.recipient', label: 'Recipient', isAddr: true, section: 'identity' },
+  { key: 'contract.owner', label: 'Owner', isAddr: true, section: 'identity' },
+  // RentVault financials
+  { key: 'contract.rent.amount', label: 'Rent Amount', isAmount: true, section: 'financial' },
+  { key: 'contract.rent.dueDate', label: 'Due Date', isDate: true, section: 'financial' },
+  { key: 'contract.rent.totalDeposited', label: 'Total Deposited', isAmount: true, section: 'financial' },
+  { key: 'contract.rent.currency', label: 'Currency', section: 'financial' },
+  // GroupBuyEscrow financials
+  { key: 'contract.escrow.goal', label: 'Funding Goal', isAmount: true, section: 'financial' },
+  { key: 'contract.escrow.totalDeposited', label: 'Total Deposited', isAmount: true, section: 'financial' },
+  { key: 'contract.escrow.expiry', label: 'Expiry Date', isDate: true, section: 'financial' },
+  { key: 'contract.escrow.currency', label: 'Currency', section: 'financial' },
+  // StableAllowanceTreasury financials
+  { key: 'contract.treasury.allowancePerIncrement', label: 'Allowance Per Claim', isAmount: true, section: 'financial' },
+  { key: 'contract.treasury.balance', label: 'Treasury Balance', isAmount: true, section: 'financial' },
+  { key: 'contract.treasury.currency', label: 'Currency', section: 'financial' },
+  // RentVault status
+  { key: 'contract.rent.withdrawn', label: 'Withdrawn', section: 'status' },
+  // GroupBuyEscrow status
+  { key: 'contract.escrow.participantCount', label: 'Participants', section: 'status' },
+  { key: 'contract.escrow.votingThreshold', label: 'Voting Threshold', section: 'status' },
+  { key: 'contract.escrow.yesVotes', label: 'Yes Votes', section: 'status' },
+  { key: 'contract.escrow.released', label: 'Released', section: 'status' },
+  // StableAllowanceTreasury status
+  { key: 'contract.treasury.approvalCounter', label: 'Approvals Granted', section: 'status' },
+  { key: 'contract.treasury.claimedCount', label: 'Claims Made', section: 'status' },
+  { key: 'contract.treasury.unclaimedCount', label: 'Unclaimed', section: 'status' },
+  // Legal
+  { key: 'legal.type', label: 'Agreement Type', section: 'legal' },
 ];
 
+const SECTION_LABELS: Record<string, string> = {
+  identity: 'Identity',
+  financial: 'Financials',
+  status: 'Contract State',
+  legal: 'Legal',
+};
+
+// ============================================================================
+// Status badge color mapping
+// ============================================================================
+function getStatusColor(status: string): string {
+  const s = status.toLowerCase();
+  if (['active', 'funded', 'completed'].includes(s)) return 'bg-acid-lime text-black';
+  if (['pending', 'deployed', 'funding'].includes(s)) return 'bg-warning-yellow text-black';
+  if (['expired', 'terminated'].includes(s)) return 'bg-hot-pink text-white';
+  if (['paused', 'awaitingvotes', 'awaitingdelivery'].includes(s)) return 'bg-blue-400 text-white';
+  return 'bg-gray-200 text-black';
+}
+
+// ============================================================================
+// Single ENS record display component
+// ============================================================================
 function RecordDisplay({
   node,
   recordKey,
   label,
   isAmount,
   isDate,
+  isAddr,
   selectedChainId,
+  blockExplorer,
 }: {
   node: `0x${string}`;
   recordKey: string;
   label: string;
   isAmount?: boolean;
   isDate?: boolean;
+  isAddr?: boolean;
   selectedChainId: number;
+  blockExplorer: string;
 }) {
   const resolverAddress = ENS_L2_RESOLVER[selectedChainId];
 
@@ -55,8 +118,57 @@ function RecordDisplay({
 
   if (!value) return null;
 
-  let displayValue = value;
+  // Status badge
+  if (recordKey === 'contract.status') {
+    return (
+      <div className="flex justify-between items-center border-b-2 border-dashed border-black/20 pb-3 last:border-0 last:pb-0">
+        <span className="font-mono text-xs uppercase font-bold text-gray-500">{label}</span>
+        <span className={`font-mono text-xs font-bold px-2.5 py-1 border-2 border-black uppercase ${getStatusColor(value)}`}>
+          {value}
+        </span>
+      </div>
+    );
+  }
 
+  // Contract type badge
+  if (recordKey === 'contract.type') {
+    const typeLabels: Record<string, string> = {
+      'RentVault': 'Rent Vault',
+      'GroupBuyEscrow': 'Group Buy Escrow',
+      'StableAllowanceTreasury': 'Allowance Treasury',
+    };
+    return (
+      <div className="flex justify-between items-center border-b-2 border-dashed border-black/20 pb-3 last:border-0 last:pb-0">
+        <span className="font-mono text-xs uppercase font-bold text-gray-500">{label}</span>
+        <span className="font-mono text-sm font-bold">{typeLabels[value] || value}</span>
+      </div>
+    );
+  }
+
+  // Address formatting
+  if (isAddr && /^0x[a-fA-F0-9]{40}$/.test(value)) {
+    const truncated = `${value.slice(0, 6)}...${value.slice(-4)}`;
+    return (
+      <div className="flex justify-between items-center border-b-2 border-dashed border-black/20 pb-3 last:border-0 last:pb-0">
+        <span className="font-mono text-xs uppercase font-bold text-gray-500">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-sm font-bold">{truncated}</span>
+          <a
+            href={`${blockExplorer}/address/${value}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1 border border-black/30 hover:bg-black hover:text-white transition-colors cursor-pointer"
+            title="View on Explorer"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Amount formatting (USDC 6 decimals)
+  let displayValue = value;
   if (isAmount) {
     try {
       const formatted = formatUnits(BigInt(value), 6);
@@ -69,6 +181,7 @@ function RecordDisplay({
     }
   }
 
+  // Date formatting
   if (isDate) {
     try {
       const ts = parseInt(value);
@@ -79,6 +192,18 @@ function RecordDisplay({
     }
   }
 
+  // Boolean-like values
+  if (value === 'true' || value === 'false') {
+    return (
+      <div className="flex justify-between items-center border-b-2 border-dashed border-black/20 pb-3 last:border-0 last:pb-0">
+        <span className="font-mono text-xs uppercase font-bold text-gray-500">{label}</span>
+        <span className={`font-mono text-xs font-bold px-2 py-0.5 border-2 border-black ${value === 'true' ? 'bg-acid-lime' : 'bg-gray-100'}`}>
+          {value === 'true' ? 'YES' : 'NO'}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-between items-center border-b-2 border-dashed border-black/20 pb-3 last:border-0 last:pb-0">
       <span className="font-mono text-xs uppercase font-bold text-gray-500">{label}</span>
@@ -87,6 +212,65 @@ function RecordDisplay({
   );
 }
 
+// ============================================================================
+// Records section - groups records by section with headers
+// ============================================================================
+function RecordsPanel({
+  node,
+  selectedChainId,
+  blockExplorer,
+}: {
+  node: `0x${string}`;
+  selectedChainId: number;
+  blockExplorer: string;
+}) {
+  const sections = ['identity', 'financial', 'status', 'legal'] as const;
+
+  return (
+    <div className="space-y-6">
+      {sections.map((section) => {
+        const sectionRecords = RECORD_KEYS.filter((r) => r.section === section);
+        return (
+          <div key={section} className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-6">
+            <h2 className="font-display font-bold text-lg uppercase mb-4 pb-3 border-b-3 border-black flex items-center gap-2">
+              {SECTION_LABELS[section]}
+            </h2>
+            <div className="space-y-3">
+              {sectionRecords.map(({ key, label, isAmount, isDate, isAddr }) => (
+                <RecordDisplay
+                  key={key}
+                  node={node}
+                  recordKey={key}
+                  label={label}
+                  isAmount={isAmount}
+                  isDate={isDate}
+                  isAddr={isAddr}
+                  selectedChainId={selectedChainId}
+                  blockExplorer={blockExplorer}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* ENS Data Source Badge */}
+      <div className="bg-gray-50 border-2 border-dashed border-black/20 p-4 flex items-center gap-3">
+        <Database className="w-5 h-5 text-gray-400 shrink-0" />
+        <div>
+          <p className="font-mono text-[10px] uppercase font-bold text-gray-400">Data Source</p>
+          <p className="font-mono text-xs text-gray-500">
+            All records retrieved from ENS L2 text records on Base. No centralized database used.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main verify component
+// ============================================================================
 function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId: number }) {
   const factoryAddress = CIVITAS_FACTORY_ADDRESS[selectedChainId];
   const [copied, setCopied] = useState(false);
@@ -116,7 +300,6 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
           return;
         }
 
-
         // Case 1.5: Full Civitas ENS domain - extract basename directly
         const expectedDomain = getCivitasEnsDomain(selectedChainId);
         const domainSuffix = `.${expectedDomain}`;
@@ -133,7 +316,6 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
 
         // Case 2: Full ENS name - resolve to address first
         if (isENSName(name)) {
-          // Resolve ENS name via server-side (supports all ENS types)
           const resolution = await resolveENSServerSide(name);
 
           if (!resolution.address) {
@@ -142,11 +324,9 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
             return;
           }
 
-          // Use the resolved address for contract lookup
-          // Store the ENS name as display name for better UX
           setProcessedInput({
-            basename: resolution.address, // Use address for lookup
-            displayName: name, // Keep ENS name for display
+            basename: resolution.address,
+            displayName: name,
           });
           setIsResolvingENS(false);
           return;
@@ -362,26 +542,13 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
         </div>
       </div>
 
-      {/* ENS Records */}
+      {/* ENS Records - grouped by section */}
       {node && (
-        <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-6">
-          <h2 className="font-display font-bold text-xl uppercase mb-4 pb-3 border-b-3 border-black">
-            On-Chain Records
-          </h2>
-          <div className="space-y-3">
-            {RECORD_KEYS.map(({ key, label, isAmount, isDate }) => (
-              <RecordDisplay
-                key={key}
-                node={node as `0x${string}`}
-                recordKey={key}
-                label={label}
-                isAmount={isAmount}
-                isDate={isDate}
-                selectedChainId={selectedChainId}
-              />
-            ))}
-          </div>
-        </div>
+        <RecordsPanel
+          node={node as `0x${string}`}
+          selectedChainId={selectedChainId}
+          blockExplorer={blockExplorer}
+        />
       )}
     </div>
   );
@@ -431,7 +598,7 @@ function VerifyPageContent() {
               Verify Contract
             </h1>
             <p className="font-mono text-xs text-void-black/60">
-              Look up any Civitas contract by ENS name or address
+              Look up any Civitas contract by ENS name or address — all data from on-chain ENS records
             </p>
           </div>
         </div>

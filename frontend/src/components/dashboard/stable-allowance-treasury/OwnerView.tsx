@@ -12,6 +12,7 @@ import { STABLE_ALLOWANCE_TREASURY_ABI, ERC20_ABI } from '@/lib/contracts/abis';
 import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 import FundingModal from '@/components/dashboard/FundingModal';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface OwnerViewProps {
   contract: AllContracts;
@@ -255,6 +256,16 @@ export default function OwnerView({ contract, userAddress, onSync }: OwnerViewPr
             <Plus className="w-6 h-6 md:w-7 md:h-7 text-void-black group-hover:rotate-90 transition-transform" />
           </div>
         </TactileButton>
+
+        {/* Sync ENS Records */}
+        {contract.basename && (
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="StableAllowanceTreasury"
+            chainId={contract.chain_id || chainId}
+          />
+        )}
 
         {/* State Management Toggle */}
         <button

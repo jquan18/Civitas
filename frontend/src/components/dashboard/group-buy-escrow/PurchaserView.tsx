@@ -11,6 +11,7 @@ import { Package, Send, AlertCircle, Shield, ExternalLink } from 'lucide-react';
 import { GROUP_BUY_ESCROW_ABI } from '@/lib/contracts/abis';
 import { getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface PurchaserViewProps {
   contract: AllContracts;
@@ -327,6 +328,16 @@ export default function PurchaserView({ contract, userAddress, onSync }: Purchas
               }`} />
             </div>
           </TactileButton>
+        )}
+
+        {/* Sync ENS Records */}
+        {contract.basename && (
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="GroupBuyEscrow"
+            chainId={contract.chain_id || chainId}
+          />
         )}
 
         {/* Trigger Release Button (optional/permissionless) */}

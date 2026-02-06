@@ -12,6 +12,7 @@ import { GROUP_BUY_ESCROW_ABI, ERC20_ABI } from '@/lib/contracts/abis';
 import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 import FundingModal from '@/components/dashboard/FundingModal';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface ParticipantViewProps {
   contract: AllContracts;
@@ -456,6 +457,18 @@ export default function ParticipantView({ contract, userAddress, onSync }: Parti
           </TactileButton>
         )}
       </div>
+
+      {/* Sync ENS Records */}
+      {contract.basename && (
+        <div className="w-full max-w-md relative z-10 mt-4">
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="GroupBuyEscrow"
+            chainId={contract.chain_id || chainId}
+          />
+        </div>
+      )}
 
       {/* Funding Modal */}
       <FundingModal

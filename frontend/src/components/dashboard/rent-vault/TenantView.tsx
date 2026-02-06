@@ -12,6 +12,7 @@ import { RENT_VAULT_ABI, ERC20_ABI } from '@/lib/contracts/abis';
 import { getUsdcAddress, getCivitasEnsDomain } from '@/lib/contracts/constants';
 import Link from 'next/link';
 import FundingModal from '@/components/dashboard/FundingModal';
+import SyncENSButton from '@/components/dashboard/SyncENSButton';
 
 interface TenantViewProps {
   contract: AllContracts;
@@ -274,6 +275,18 @@ export default function TenantView({ contract, userAddress, onSync }: TenantView
             <Wallet className="w-8 h-8 text-void-black group-hover:scale-110 transition-transform" />
           </div>
         </TactileButton>
+      )}
+
+      {/* Sync ENS Records */}
+      {contract.basename && (
+        <div className="w-full max-w-md relative z-10 mt-4">
+          <SyncENSButton
+            contractAddress={contractAddress}
+            basename={contract.basename}
+            templateId="RentVault"
+            chainId={contract.chain_id || chainId}
+          />
+        </div>
       )}
 
       {/* Funding Modal */}
