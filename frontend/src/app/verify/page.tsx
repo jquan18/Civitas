@@ -33,21 +33,23 @@ function RecordDisplay({
   label,
   isAmount,
   isDate,
+  selectedChainId,
 }: {
   node: `0x${string}`;
   recordKey: string;
   label: string;
   isAmount?: boolean;
   isDate?: boolean;
+  selectedChainId: number;
 }) {
-  const chainId = useChainId();
-  const resolverAddress = ENS_L2_RESOLVER[chainId];
+  const resolverAddress = ENS_L2_RESOLVER[selectedChainId];
 
   const { data: value } = useReadContract({
     address: resolverAddress,
     abi: ENS_L2_RESOLVER_ABI,
     functionName: 'text',
     args: [node, recordKey],
+    chainId: selectedChainId,
     query: { enabled: !!resolverAddress },
   });
 
@@ -86,7 +88,6 @@ function RecordDisplay({
 }
 
 function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId: number }) {
-  const chainId = useChainId();
   const factoryAddress = CIVITAS_FACTORY_ADDRESS[selectedChainId];
   const [copied, setCopied] = useState(false);
   const [isResolvingENS, setIsResolvingENS] = useState(false);
@@ -173,6 +174,7 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
     abi: CIVITAS_FACTORY_ABI,
     functionName: 'getContractByBasename',
     args: processedInput ? [processedInput.basename] : undefined,
+    chainId: selectedChainId,
     query: { enabled: !!processedInput && !!factoryAddress },
   });
 
@@ -182,6 +184,7 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
     abi: CIVITAS_FACTORY_ABI,
     functionName: 'calculateENSNode',
     args: processedInput ? [processedInput.basename] : undefined,
+    chainId: selectedChainId,
     query: { enabled: !!processedInput && !!factoryAddress },
   });
 
@@ -374,6 +377,7 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
                 label={label}
                 isAmount={isAmount}
                 isDate={isDate}
+                selectedChainId={selectedChainId}
               />
             ))}
           </div>
