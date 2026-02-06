@@ -1,5 +1,6 @@
 import { publicClient } from '@/config/blockchain'
 import { getTemplate } from '@/config/templates'
+import { logger } from '@/utils/logger'
 import type { Address } from 'viem'
 /**
  * Read on-chain state for any template type.
@@ -21,7 +22,16 @@ export async function readTemplateContractState(
         abi: template.abi as any,
         functionName: field,
       }).then((value) => ({ field, value }))
-       .catch(() => ({ field, value: null }))
+       .catch((error) => {
+         logger.warn('Failed to read contract field', {
+           contractAddress,
+           templateId,
+           field,
+           errorMessage: error?.message || String(error),
+           errorShortMessage: error?.shortMessage,
+         })
+         return { field, value: null }
+       })
     )
   )
 

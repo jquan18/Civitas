@@ -31,7 +31,9 @@ export async function syncContractsJob() {
         if (result.status === 'rejected') {
           logger.error('Contract sync failed', {
             contractAddress: genericContracts[index].contract_address,
-            error: result.reason,
+            templateId: genericContracts[index].template_id,
+            chainId: genericContracts[index].chain_id,
+            error: result.reason, // Logger now handles Error serialization properly
           })
         }
       })

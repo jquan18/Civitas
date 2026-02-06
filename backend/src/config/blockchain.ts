@@ -1,8 +1,8 @@
 import { createPublicClient, http } from 'viem'
-import { base } from 'viem/chains'
+import { baseSepolia } from 'viem/chains'
 import { env } from './environment'
 
 export const publicClient = createPublicClient({
-  chain: base,
+  chain: baseSepolia,  // ✅ Fixed: Use Base Sepolia (chain ID 84532)
   transport: http(env.BASE_RPC_URL),
 })

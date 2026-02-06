@@ -1,4 +1,4 @@
-import { base, baseSepolia } from 'wagmi/chains';
+import { base, baseSepolia } from 'viem/chains';
 
 // Chain configuration
 export const SUPPORTED_CHAINS = [base, baseSepolia] as const;

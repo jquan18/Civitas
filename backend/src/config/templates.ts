@@ -87,7 +87,13 @@ export const TEMPLATES: Record<string, TemplateDefinition> = {
 }
 
 export function getTemplate(templateId: string): TemplateDefinition | undefined {
-  return TEMPLATES[templateId]
+  // Direct lookup first (snake_case keys)
+  if (TEMPLATES[templateId]) return TEMPLATES[templateId]
+
+  // Normalize PascalCase/camelCase to snake_case for DB compatibility
+  // e.g. "RentVault" -> "rent_vault", "StableAllowanceTreasury" -> "stable_allowance_treasury"
+  const normalized = templateId.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()
+  return TEMPLATES[normalized]
 }
 
 export function getAllTemplates(): TemplateDefinition[] {

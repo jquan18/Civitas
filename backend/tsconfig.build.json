@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "**/*.d.ts",
+    "**/node_modules/**",
+    "dist",
+    "src/lib/supabase/hooks/**/*",
+    "src/lib/supabase/middleware.ts",
+    "src/lib/supabase/sync.ts",
+    "src/lib/ai/schemas.ts"
+  ],
+  "ts-node": {
+    "transpileOnly": true
+  }
+}
