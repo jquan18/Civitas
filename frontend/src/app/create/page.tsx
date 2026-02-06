@@ -484,12 +484,55 @@ export default function CreatePage() {
                 )}
 
                 {ensStep === 'done' && ensName && (
-                  <div className="mt-4">
-                    <div className="bg-[#CCFF00] border-[3px] border-black p-4 shadow-[4px_4px_0px_#000]">
-                      <p className="font-mono text-xs uppercase font-bold opacity-60 mb-1">ENS Registered</p>
-                      <p className="font-mono text-sm font-bold">
-                        {ensName}.{ensDomain}
-                      </p>
+                  <div className="mt-6 animate-in zoom-in-50 duration-300 ease-out-back">
+                    <div className="relative group cursor-pointer" onClick={() => navigator.clipboard.writeText(`${ensName}.${ensDomain}`)}>
+                      {/* Badge Container */}
+                      <div className="bg-cyan-400 border-[3px] border-black p-5 shadow-[6px_6px_0px_#000] relative overflow-hidden transition-transform group-active:translate-x-[2px] group-active:translate-y-[2px] group-active:shadow-[4px_4px_0px_#000]">
+
+                        {/* Decorative "Rivets" */}
+                        <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 bg-black rounded-full opacity-20" />
+                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-black rounded-full opacity-20" />
+                        <div className="absolute bottom-1.5 left-1.5 w-1.5 h-1.5 bg-black rounded-full opacity-20" />
+                        <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 bg-black rounded-full opacity-20" />
+
+                        {/* Top Label */}
+                        <div className="flex items-center justify-between mb-3 border-b-2 border-black/10 pb-2">
+                          <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-black/60">
+                            Verified Identity
+                          </span>
+                          <div className="bg-black text-white text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-wider">
+                            Official
+                          </div>
+                        </div>
+
+                        {/* Main Identity Name */}
+                        <div className="text-center py-2">
+                          <p className="font-headline text-2xl uppercase text-black leading-none break-all">
+                            {ensName}
+                          </p>
+                          <p className="font-mono text-xs font-bold text-black/50 mt-1">
+                            .{ensDomain}
+                          </p>
+                        </div>
+
+                        {/* Bottom Detail (Address) */}
+                        <div className="mt-3 pt-3 border-t-2 border-black/10 flex items-center justify-between">
+                          <div className="font-mono text-[10px] text-black/60">
+                            ID: <span className="font-bold text-black">{deployedAddress ? formatAddress(deployedAddress) : '...'}</span>
+                          </div>
+                          {/* Decorative Barcode */}
+                          <div className="h-4 flex gap-[1px] opacity-40">
+                            {[...Array(10)].map((_, i) => (
+                              <div key={i} className="bg-black" style={{ width: Math.random() > 0.5 ? 2 : 1 }} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Hover "Copy" Tooltip */}
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-bold px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                        CLICK TO COPY
+                      </div>
                     </div>
                   </div>
                 )}

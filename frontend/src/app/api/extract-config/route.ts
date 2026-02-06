@@ -22,7 +22,7 @@ const schemaMap = {
 
 // Get extraction prompt based on template
 function getExtractionPrompt(templateId: string, timezoneInfo?: TimezoneInfo, walletAddress?: string): string {
-  const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+  const dateTimeContext = getCurrentDateTimeContext(timezoneInfo);
   const dateExamples = getDateConversionExamples(timezoneInfo);
 
   switch (templateId) {
@@ -38,8 +38,12 @@ Fields to extract (leave as undefined if not mentioned):
 - tenants: Array of tenant addresses - ONLY extract if explicitly mentioned
 - shareBps: Array of share basis points - ONLY extract if explicitly mentioned
 
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not available'}
+- Use this when the user refers to themselves ("me", "myself", "I").
+
 WALLET ADDRESS HANDLING:
-- If user indicates they are the landlord/recipient, use the connected wallet address automatically
+- If user indicates they are the landlord/recipient, USE ${walletAddress || 'connected_wallet'}
 - DO NOT wait for them to provide their own address manually
 - Connected wallet: ${walletAddress || 'Not available'}
 
@@ -81,7 +85,9 @@ WALLET ADDRESS HANDLING:
 - If user indicates they are a participant ("I'm joining", "I want to contribute"), extract "me" for that participant entry
 - If user refers to themselves for any role, extract the literal string "me" (not the wallet address)
 - DO NOT substitute wallet addresses - keep "me" as-is for frontend resolution
-- Connected wallet: ${walletAddress || 'Not available'}`
+- Connected wallet: ${walletAddress || 'Not available'}
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not available'}`
 
     case 'stable-allowance-treasury':
       return `Extract Stable Allowance Treasury configuration from the conversation.
@@ -102,6 +108,8 @@ WALLET ADDRESS HANDLING:
 - Extract the literal string "me" (not the wallet address) for frontend resolution
 - DO NOT substitute wallet addresses directly
 - Connected wallet: ${walletAddress || 'Not available'}
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not available'}
 
 IMPORTANT: If the conversation doesn't contain specific values, leave all fields undefined.
 Do NOT invent or guess values. Return an empty object if no contract data is available.

@@ -23,7 +23,7 @@ export function useTemplateChat() {
 
   // Detect user's timezone from browser
   const timezone = useUserTimezone();
-  
+
   // Get connected wallet address
   const { address: walletAddress } = useAccount();
   const chainId = useChainId();
@@ -33,6 +33,12 @@ export function useTemplateChat() {
 
   // Manual input state management (as fallback for v6 compatibility)
   const [localInput, setLocalInput] = useState('');
+
+  // Debug logging for wallet address
+  useEffect(() => {
+    console.log('[useTemplateChat] Wallet Address changed:', walletAddress);
+    console.log('[useTemplateChat] Active Template:', activeTemplate?.id);
+  }, [walletAddress, activeTemplate]);
 
   const chatResult = useChat({
     api: '/api/chat',
@@ -56,16 +62,39 @@ export function useTemplateChat() {
   // In AI SDK v6, sendMessage replaces append
   // Create wrapper to match the old append API for backward compatibility
   const append = async (message: { role: string; content: string }) => {
-    if (sendMessage) {
-      return sendMessage({ text: message.content });
+    // Force fresh body with latest state
+    const requestBody = {
+      templateId: activeTemplate?.id,
+      timezone,
+      walletAddress,
+      chainId,
+    };
+
+    if (chatResult.append) {
+      console.log('[useTemplateChat] Appending with explicit body:', requestBody);
+      return chatResult.append(message, { body: requestBody });
     }
-    throw new Error('sendMessage is not available');
+
+    if (sendMessage) {
+      console.log('[useTemplateChat] Sending message with explicit body fallback:', requestBody);
+      // @ts-ignore - Try passing options if supported, though types might conflict
+      return sendMessage({ text: message.content }, { body: requestBody });
+    }
+    throw new Error('No send method available (append/sendMessage missing)');
   };
 
   const isLoading = status !== 'ready';
 
   // Helper to extract text from message content
   const getMessageText = (message: typeof messages[number]) => {
+    console.log('[getMessageText] message structure:', {
+      hasContent: !!message.content,
+      contentType: typeof message.content,
+      isArray: Array.isArray(message.content),
+      hasParts: !!(message as any).parts,
+      partsType: typeof (message as any).parts,
+    });
+
     if (typeof message.content === 'string') {
       return message.content;
     }
@@ -76,19 +105,36 @@ export function useTemplateChat() {
         .map(part => part.text)
         .join(' ');
     }
+    // AI SDK v6: Handle parts array at message level
+    if (Array.isArray((message as any).parts)) {
+      return (message as any).parts
+        .filter((part: any) => part.type === 'text')
+        .map((part: any) => part.text)
+        .join(' ');
+    }
     return '';
   };
 
   // Auto-detect template from first user message
   useEffect(() => {
     if (messages.length > 0 && !detectedTemplate && !manualTemplate) {
+      console.log('[Auto-detect] Starting detection, messages:', messages.length);
       const userMessages = messages.filter(m => m.role === 'user');
+      console.log('[Auto-detect] User messages:', userMessages.length);
+
       if (userMessages.length > 0) {
+        console.log('[Auto-detect] First user message:', userMessages[0]);
         const firstUserMessageText = getMessageText(userMessages[0]);
+        console.log('[Auto-detect] Extracted text:', firstUserMessageText);
+
         const detected = templateRegistry.detectFromIntent(firstUserMessageText);
+        console.log('[Auto-detect] Detection result:', detected?.id || 'null');
+
         if (detected) {
           console.log('Auto-detected template:', detected.id);
           setDetectedTemplate(detected);
+        } else {
+          console.log('[Auto-detect] No template matched for text:', firstUserMessageText);
         }
       }
     }

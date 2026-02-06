@@ -305,52 +305,63 @@ export function ContractReceiptCard({
 
                   {/* Basename Customization Section */}
                   {!isSuccess && (
-                    <div className="w-full border-t border-dashed border-black pt-4">
+                    <div className="w-full border-t-[2px] border-dashed border-black pt-6">
                       <button
                         onClick={() => setCustomizeBasename(!customizeBasename)}
-                        className="flex items-center gap-2 text-xs font-mono font-bold uppercase hover:underline mb-2"
+                        className="group flex items-center gap-3 text-xs font-mono font-bold uppercase hover:text-cyan-600 transition-colors mb-4 w-full"
                       >
-                        {customizeBasename ? (
-                          <div className="w-4 h-4 border border-black bg-black flex items-center justify-center">
-                            <CheckCircle2 className="w-3 h-3 text-white" />
-                          </div>
-                        ) : (
-                          <div className="w-4 h-4 border border-black bg-white" />
-                        )}
-                        Customize Basename (Optional)
+                        <div className={`
+                          w-5 h-5 border-[2px] border-black flex items-center justify-center transition-all duration-200
+                          ${customizeBasename ? 'bg-cyan-400 shadow-[2px_2px_0px_#000]' : 'bg-white group-hover:shadow-[2px_2px_0px_#000]'}
+                        `}>
+                          {customizeBasename && <CheckCircle2 className="w-3 h-3 text-black" />}
+                        </div>
+                        <span className="tracking-wider">Assign Custom Identity</span>
                       </button>
 
                       {customizeBasename && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={customBasename}
-                              onChange={(e) => {
-                                setCustomBasename(e.target.value.toLowerCase())
-                              }}
-                              placeholder="my-contract-name"
-                              className={`
-                                w-full px-3 py-2 bg-white border border-black
-                                font-mono text-sm placeholder:text-gray-300
-                                focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1
-                                ${basenameError ? 'border-red-500 bg-red-50' : ''}
-                              `}
-                            />
-                            <div className="absolute right-3 top-2.5 text-xs text-gray-400 font-mono pointer-events-none">
-                              .civitas...
+                        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                          <div className={`
+                            relative bg-white border-[2px] border-black p-1 transition-all duration-200
+                            ${basenameError ? 'shadow-[4px_4px_0px_#EF4444]' : 'shadow-[4px_4px_0px_#000] focus-within:shadow-[2px_2px_0px_#000] focus-within:translate-x-[2px] focus-within:translate-y-[2px]'}
+                          `}>
+                            {/* "Rivets" */}
+                            <div className="absolute top-1 left-1 w-1 h-1 bg-black rounded-full opacity-20" />
+                            <div className="absolute top-1 right-1 w-1 h-1 bg-black rounded-full opacity-20" />
+                            <div className="absolute bottom-1 left-1 w-1 h-1 bg-black rounded-full opacity-20" />
+                            <div className="absolute bottom-1 right-1 w-1 h-1 bg-black rounded-full opacity-20" />
+
+                            <div className="px-3 py-2">
+                              <label className="block text-[10px] font-mono font-bold uppercase text-gray-400 mb-1 tracking-widest">
+                                Basename ID
+                              </label>
+                              <div className="flex items-center">
+                                <input
+                                  type="text"
+                                  value={customBasename}
+                                  onChange={(e) => {
+                                    setCustomBasename(e.target.value.toLowerCase())
+                                  }}
+                                  placeholder="your-name"
+                                  className="w-full font-headline text-lg uppercase bg-transparent outline-none placeholder:text-gray-200 text-black"
+                                />
+                                <div className="font-headline text-lg text-black/30 pointer-events-none select-none">
+                                  .civitas...
+                                </div>
+                              </div>
                             </div>
                           </div>
 
                           {basenameError ? (
-                            <div className="flex items-start gap-1 text-[10px] text-red-600 font-mono font-bold">
-                              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2 text-xs text-red-600 font-mono font-bold bg-red-50 border border-red-200 p-2">
+                              <AlertCircle className="w-4 h-4 flex-shrink-0" />
                               <span>{basenameError}</span>
                             </div>
                           ) : (
-                            <p className="text-[10px] text-gray-500 font-mono">
-                              Final: {customBasename || 'your-name'}-xxxxxxxx.civitas...
-                            </p>
+                            <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono pl-1">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                              <span>Ready for verification</span>
+                            </div>
                           )}
                         </div>
                       )}

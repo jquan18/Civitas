@@ -91,12 +91,17 @@ Always confirm the details before finalizing.`;
 // Generic Template Selection Prompt
 // ============================================
 function getTemplateSelectionPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
-   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo);
    const ensContext = getENSContext(chainId);
 
-   return `${dateTimeContext}
+   return `<system_context>
+${dateTimeContext}
+
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not connected'}
 
 ${ensContext}
+</system_context>
 
 You are a friendly AI assistant for Civitas, a platform for creating smart contract agreements on the blockchain.
 
@@ -128,13 +133,18 @@ Be warm, patient, and guide them to the right solution!`;
 // Template-Specific Prompts
 // ============================================
 function getRentVaultPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
-   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo);
    const dateExamples = getDateConversionExamples(timezoneInfo);
    const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
-User Connected Wallet: ${walletAddress || 'Not connected'}
+
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not connected'}
+- Use this address effectively when the user refers to themselves ("me", "myself", "I").
+- If the user says they are the landlord, use this address as the recipient.
+
 ${ensContext}
 </system_context>
 
@@ -180,13 +190,18 @@ ${TOOL_USAGE_INSTRUCTIONS}`;
 }
 
 function getGroupBuyEscrowPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
-   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo);
    const dateExamples = getDateConversionExamples(timezoneInfo);
    const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
-User Connected Wallet: ${walletAddress || 'Not connected'}
+
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not connected'}
+- Use this address effectively when the user refers to themselves ("me", "myself", "I").
+- If the user says they are participating, include this address in the participants list.
+
 ${ensContext}
 </system_context>
 
@@ -233,12 +248,18 @@ ${TOOL_USAGE_INSTRUCTIONS}`;
 }
 
 function getStableAllowanceTreasuryPrompt(timezoneInfo?: TimezoneInfo, walletAddress?: string, chainId?: number): string {
-   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo, walletAddress);
+   const dateTimeContext = getCurrentDateTimeContext(timezoneInfo);
    const ensContext = getENSContext(chainId);
 
    return `<system_context>
 ${dateTimeContext}
-User Connected Wallet: ${walletAddress || 'Not connected'}
+
+IMPORTANT USER CONTEXT:
+Connected Wallet Address: ${walletAddress || 'Not connected'}
+- Use this address effectively when the user refers to themselves ("me", "myself", "I").
+- If the user says they are the owner/parent, use this address.
+- If the user says they are the recipient/child, use this address.
+
 ${ensContext}
 </system_context>
 

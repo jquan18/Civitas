@@ -1,6 +1,7 @@
 import { createPublicClient, http } from 'viem'
 import { base, baseSepolia } from 'viem/chains'
-import { CIVITAS_FACTORY_ADDRESS, CIVITAS_FACTORY_ABI } from '@/lib/contracts/constants'
+import { CIVITAS_FACTORY_ADDRESS } from '@/lib/contracts/constants'
+import { CIVITAS_FACTORY_ABI } from '@/lib/contracts/abis'
 
 export const runtime = 'edge'
 

@@ -27,6 +27,17 @@ export async function POST(req: Request) {
       chainId as number | undefined
     );
 
+    console.log('[API] Chat Request:', {
+      templateId,
+      walletAddress,
+      chainId,
+      messageCount: messages?.length
+    });
+    console.log('[API] System Prompt snippet:', systemPrompt.substring(0, 200));
+    if (walletAddress) {
+      console.log('[API] Wallet Address present in prompt:', systemPrompt.includes(walletAddress));
+    }
+
     // Get configured provider (local proxy in dev, official API in production)
     const google = getGoogleProvider();
 
