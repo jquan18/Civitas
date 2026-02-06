@@ -115,6 +115,21 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
           return;
         }
 
+
+        // Case 1.5: Full Civitas ENS domain - extract basename directly
+        const expectedDomain = getCivitasEnsDomain(selectedChainId);
+        const domainSuffix = `.${expectedDomain}`;
+
+        if (name.toLowerCase().endsWith(domainSuffix.toLowerCase())) {
+          const basename = name.slice(0, -domainSuffix.length);
+          setProcessedInput({
+            basename: basename,
+            displayName: name,
+          });
+          setIsResolvingENS(false);
+          return;
+        }
+
         // Case 2: Full ENS name - resolve to address first
         if (isENSName(name)) {
           // Resolve ENS name via server-side (supports all ENS types)
@@ -137,7 +152,6 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
         }
 
         // Case 3: Basename only - assume Civitas basename, append domain
-        const expectedDomain = getCivitasEnsDomain(selectedChainId);
         setProcessedInput({
           basename: name,
           displayName: `${name}.${expectedDomain}`,
