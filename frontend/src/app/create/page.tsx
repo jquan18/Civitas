@@ -8,6 +8,7 @@ import { useCivitasContractDeploy } from '@/hooks/useCivitasContractDeploy';
 import { templateRegistry } from '@/lib/templates/registry';
 import { TemplateSelector } from '@/components/chat/TemplateSelector';
 import { ContractReceiptCard } from '@/components/contract/ContractReceiptCard';
+import { RouteComparisonCard } from '@/components/deploy/RouteComparisonCard';
 import { StatusBanner } from '@/components/ui/StatusBanner';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { TerminalInput } from '@/components/ui/TerminalInput';
@@ -66,12 +67,44 @@ export default function CreatePage() {
   const [isResolvingENS, setIsResolvingENS] = useState(false);
   const [customBasename, setCustomBasename] = useState<string | null>(null);
   const [isValidatingBasename, setIsValidatingBasename] = useState(false);
+  const [aiRoutes, setAiRoutes] = useState<any[] | null>(null);
+  const [aiRecommendation, setAiRecommendation] = useState<{
+    sourceChainId: number;
+    sourceTokenAddress: string;
+    sourceTokenSymbol: string;
+  } | null>(null);
 
   const allTemplates = templateRegistry.getAll();
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Watch for AI tool results regarding funding routes
+  useEffect(() => {
+    for (const message of messages) {
+      if (!message.parts) continue;
+      for (const part of message.parts) {
+        if (part.type === 'tool-result' && (part as any).toolName === 'getOptimalFundingRoute') {
+          const result = (part as any).result;
+          if (result?.success && result.routes?.length > 0) {
+            setAiRoutes(result.routes);
+            const best = result.recommendation?.bestRoute || result.routes[0];
+            const rec = {
+              sourceChainId: best.sourceChainId,
+              sourceTokenAddress: best.sourceTokenAddress,
+              sourceTokenSymbol: best.sourceToken,
+            };
+            setAiRecommendation(rec);
+            // Persist for dashboard (survives page navigation)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('civitas_ai_recommendation', JSON.stringify(rec));
+            }
+          }
+        }
+      }
+    }
   }, [messages]);
 
   const onSubmit = async () => {
@@ -405,6 +438,16 @@ export default function CreatePage() {
                   ensName={ensName}
                   ensDomain={ensDomain}
                 />
+
+                {aiRoutes && aiRoutes.length > 0 && (
+                  <div className="mt-4">
+                    <RouteComparisonCard
+                      routes={aiRoutes}
+                      recommendedIndex={0}
+                      requiredAmount={extractedConfig?.rentAmount || extractedConfig?.fundingGoal || '?'}
+                    />
+                  </div>
+                )}
 
                 {/* Deployment Status Messages */}
                 {deploymentError && (

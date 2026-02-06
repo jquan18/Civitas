@@ -22,6 +22,16 @@ You have access to these tools to help users:
    - Use when you need to verify address format or check account type
    - Helps identify smart contracts vs. externally owned accounts
 
+4. **scanWalletBalances**: Scan wallet balances across multiple chains (Base, Mainnet, Arb, Opt, Poly)
+   - PROACTIVELY call this when the user is ready to fund or deploy
+   - Checks for ETH and USDC on all supported chains
+   - Helps users find where their money is
+
+5. **getOptimalFundingRoute**: Calculate optimal bridge route to Base
+   - Call this AFTER scanWalletBalances finds funds
+   - Returns fees, time, and gas costs for bridging
+   - Helps users choose the cheapest/fastest way to fund their contract
+
 TOOL USAGE RULES:
 - Use tools PROACTIVELY when users mention ENS names or addresses
 - Incorporate results NATURALLY into your response
@@ -33,6 +43,17 @@ TOOL USAGE RULES:
 - Chain tools together when helpful (e.g., resolveENS → checkBalance → validateAddress)
 - NEVER mention the word "tool" to the user - they should just see helpful information
 </tools>
+
+<cross_chain_advisor_behavior>
+When the user is ready to deploy or fund ("I'm ready", "Let's go", "Fund it"):
+1. FIRST, call **scanWalletBalances** on their address.
+2. Wait for the result.
+3. If funds are found on other chains (e.g., Arbitrum USDC, Mainnet ETH):
+   - Call **getOptimalFundingRoute** for the best source.
+   - Present the option: "I found 500 USDC on Arbitrum. It would cost ~$2.50 to bridge and take 2 mins. Shall we use that?"
+4. If funds are on Base already:
+   - Confirm they are good to go: "You have sufficient USDC on Base. We can proceed directly."
+</cross_chain_advisor_behavior>
 `;
 
 // ============================================

@@ -13,9 +13,15 @@ interface LiFiBridgeStepProps {
   onBridgeStarted: (txHash: string) => void;
   onBridgeCompleted: () => void;
   onError: (error: Error) => void;
+  recommendedSource?: {
+    chainId: number;
+    tokenAddress: string;
+    tokenSymbol: string;
+  };
 }
 
 type BridgeState = 'idle' | 'loading-routes' | 'selecting' | 'executing' | 'completed' | 'error';
+
 
 interface RouteOption {
   route: Route;
@@ -38,6 +44,7 @@ export function LiFiBridgeStep({
   onBridgeStarted,
   onBridgeCompleted,
   onError,
+  recommendedSource,
 }: LiFiBridgeStepProps) {
   const { address } = useAccount();
   const wagmiConfig = useConfig();
@@ -48,11 +55,83 @@ export function LiFiBridgeStep({
   const [executionStatus, setExecutionStatus] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Source chain selection (user picks where to bridge from)
-  const [fromChainId, setFromChainId] = useState<number>(LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET);
+  // Source chain selection
+  const [fromChainId, setFromChainId] = useState<number>(
+    recommendedSource?.chainId || LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET
+  );
+
+  // Token selection state
+  const [fromTokenAddress, setFromTokenAddress] = useState<string>(
+    recommendedSource?.tokenAddress || USDC_ADDRESSES[LIFI_SUPPORTED_CHAIN_IDS.ETHEREUM_MAINNET] || ''
+  );
+  const [fromTokenSymbol, setFromTokenSymbol] = useState<string>(
+    recommendedSource?.tokenSymbol || 'USDC'
+  );
+  const [availableTokens, setAvailableTokens] = useState<any[]>([]);
+  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
   // Convert amount prop (bigint) to USDC string for display
   const amountInUsdc = formatUnits(amount, 6);
+
+  // Initialize from recommendation
+  useEffect(() => {
+    if (recommendedSource) {
+      setFromChainId(recommendedSource.chainId);
+      setFromTokenAddress(recommendedSource.tokenAddress);
+      setFromTokenSymbol(recommendedSource.tokenSymbol);
+    }
+  }, [recommendedSource]);
+
+  // Fetch user's tokens when chain changes
+  useEffect(() => {
+    if (!address || !fromChainId) return;
+    setIsLoadingTokens(true);
+
+    // Use LI.FI REST API to get token balances
+    fetch(`https://li.quest/v1/token/balances?walletAddress=${address}&chains=${fromChainId}`)
+      .then(res => res.json())
+      .then(data => {
+        const chainTokens = data[fromChainId] || [];
+        const tokens = chainTokens
+          .filter((t: any) => parseFloat(t.amount || '0') > 0)
+          // Sort by USD value desc (if price available) or amount
+          .sort((a: any, b: any) => parseFloat(b.amount || '0') - parseFloat(a.amount || '0'));
+        setAvailableTokens(tokens);
+
+        // If current selected token is not in list (and not AI recommendation), default to USDC or first token
+        if (!recommendedSource && tokens.length > 0 && !tokens.find((t: any) => t.address === fromTokenAddress)) {
+           // Default to USDC if available, else first token
+           const usdc = tokens.find((t: any) => t.symbol === 'USDC');
+           if (usdc) {
+             setFromTokenAddress(usdc.address);
+             setFromTokenSymbol('USDC');
+           } else {
+             setFromTokenAddress(tokens[0].address);
+             setFromTokenSymbol(tokens[0].symbol);
+           }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch tokens:', err);
+        // Fallback: just show USDC
+        setAvailableTokens([{ symbol: 'USDC', address: USDC_ADDRESSES[fromChainId] }]);
+      })
+      .finally(() => setIsLoadingTokens(false));
+  }, [address, fromChainId, recommendedSource, fromTokenAddress]);
+
+  // Auto-trigger route discovery if we have a recommendation
+  useEffect(() => {
+    if (recommendedSource && address && fromTokenAddress === recommendedSource.tokenAddress) {
+       // Small delay to ensure state is settled
+       const timer = setTimeout(() => {
+         // Only fetch if idle
+         if (state === 'idle') {
+            fetchRoutes();
+         }
+       }, 500);
+       return () => clearTimeout(timer);
+    }
+  }, [recommendedSource, address, fromTokenAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Configure SDK on mount
   useEffect(() => {
@@ -212,9 +291,40 @@ export function LiFiBridgeStep({
             >
               {sourceChains.map((chain) => (
                 <option key={chain.id} value={chain.id}>
-                  {chain.name} (USDC)
+                  {chain.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Source Token
+              {recommendedSource && fromTokenAddress === recommendedSource.tokenAddress && (
+                <span className="ml-2 text-xs bg-[#CCFF00] border border-black px-2 py-0.5 font-bold">
+                  AI PICK
+                </span>
+              )}
+            </label>
+            <select
+              value={fromTokenAddress}
+              onChange={(e) => {
+                const token = availableTokens.find(t => t.address === e.target.value);
+                setFromTokenAddress(e.target.value);
+                setFromTokenSymbol(token?.symbol || 'Unknown');
+              }}
+              className="w-full p-3 border-2 border-black rounded bg-white"
+              disabled={state === 'loading-routes' || isLoadingTokens}
+            >
+              {availableTokens.length > 0 ? (
+                availableTokens.map((token) => (
+                  <option key={token.address} value={token.address}>
+                    {token.symbol} {token.amount ? `(${parseFloat(token.amount).toFixed(4)})` : ''}
+                  </option>
+                ))
+              ) : (
+                <option value={USDC_ADDRESSES[fromChainId] || ''}>USDC</option>
+              )}
             </select>
           </div>
 

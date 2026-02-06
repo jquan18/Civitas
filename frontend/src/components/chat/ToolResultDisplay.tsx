@@ -53,6 +53,10 @@ function getToolActionText(toolName: string): string {
       return 'Checking USDC balance';
     case 'validateAddress':
       return 'Validating address';
+    case 'scanWalletBalances':
+      return 'Scanning wallet balances';
+    case 'getOptimalFundingRoute':
+      return 'Calculating optimal route';
     default:
       return 'Processing';
   }
@@ -70,6 +74,10 @@ function renderToolResult(toolName: string, result: any): React.ReactNode {
       return renderCheckBalanceResult(result);
     case 'validateAddress':
       return renderValidateAddressResult(result);
+    case 'scanWalletBalances':
+      return renderScanBalancesResult(result);
+    case 'getOptimalFundingRoute':
+      return renderOptimalRouteResult(result);
     default:
       return <span className="text-gray-600">Unknown tool: {toolName}</span>;
   }
@@ -154,6 +162,104 @@ function renderCheckBalanceResult(result: any): React.ReactNode {
   );
 }
 
+function renderScanBalancesResult(result: any): React.ReactNode {
+  if (!result.success) {
+    return (
+      <div>
+        <div className="font-bold text-red-700">Scan Failed</div>
+        <div className="mt-1 text-red-600">{result.error || 'Unknown error'}</div>
+      </div>
+    );
+  }
+
+  if (result.balances.length === 0) {
+    return (
+      <div>
+        <div className="font-bold text-yellow-700">No Funds Found</div>
+        <div className="mt-1 text-sm text-gray-600">
+          Scanned Ethereum, Base, Arbitrum, Optimism, and Polygon.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="font-bold text-green-700">Funds Found</div>
+      <div className="mt-1 flex flex-col gap-1">
+        {result.balances.map((chain: any) => (
+          <div key={chain.chainId} className="border-b border-gray-200 pb-1 last:border-0">
+            <span className="font-bold text-xs uppercase text-gray-500">{chain.chainName}</span>
+            <div className="flex gap-2 flex-wrap">
+              {chain.balances.map((token: any) => (
+                <span key={token.symbol} className="text-sm bg-gray-100 px-1 rounded">
+                  <span className="font-bold">{parseFloat(token.amount).toFixed(4)}</span>{' '}
+                  {token.symbol}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        AI will now calculate the best route...
+      </div>
+    </div>
+  );
+}
+
+function renderOptimalRouteResult(result: any): React.ReactNode {
+  if (!result.success) {
+    return (
+      <div>
+        <div className="font-bold text-red-700">Route Calculation Failed</div>
+        <div className="mt-1 text-red-600">{result.error || 'Unknown error'}</div>
+      </div>
+    );
+  }
+
+  const route = result.recommendation?.bestRoute || result.routes?.[0];
+
+  if (!route) {
+    return (
+       <div>
+        <div className="font-bold text-yellow-700">No Routes Found</div>
+        <div className="mt-1 text-sm text-gray-600">
+          Could not find a valid funding route.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="font-bold text-green-700">Optimal Route Found</div>
+      <div className="mt-1 text-sm bg-green-50 p-2 rounded border border-green-200">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-gray-600 font-medium">Source:</span>
+          <span className="font-bold">{route.sourceToken} on Chain {route.sourceChainId}</span>
+        </div>
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-gray-600 font-medium">Est. Gas:</span>
+          <span className="font-bold text-green-700">${parseFloat(route.gasCostUsd).toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 font-medium">Time:</span>
+          <span className="font-bold">~{Math.ceil(route.executionDuration / 60)} min</span>
+        </div>
+      </div>
+      <div className="mt-1 text-xs text-gray-500 text-center">
+        Bridge via {route.tool}
+      </div>
+      {result.recommendation?.reason && (
+        <div className="mt-2 text-xs italic text-gray-600 border-t border-gray-200 pt-1">
+           "{result.recommendation.reason}"
+        </div>
+      )}
+    </div>
+  );
+}
+
 function renderValidateAddressResult(result: any): React.ReactNode {
   if (!result.success) {
     return (
@@ -185,3 +291,4 @@ function renderValidateAddressResult(result: any): React.ReactNode {
     </div>
   );
 }
+

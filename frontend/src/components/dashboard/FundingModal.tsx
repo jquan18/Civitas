@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import FundingMethodSelector, { type FundingMethod } from './FundingMethodSelector';
 import { LiFiBridgeStep, DirectFundingStep, BalancePoller } from '@/components/deploy';
@@ -30,8 +30,23 @@ export default function FundingModal({
   const [fundingStep, setFundingStep] = useState<'idle' | 'funding' | 'polling' | 'complete'>('idle');
   const [fundingError, setFundingError] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
+  const [recommendedSource, setRecommendedSource] = useState<any>(null);
 
   const isMainnet = isLiFiSupported(chainId);
+
+  // Load AI recommendation from local storage
+  useEffect(() => {
+    if (isOpen) {
+      const stored = localStorage.getItem('civitas_ai_recommendation');
+      if (stored) {
+        try {
+          setRecommendedSource(JSON.parse(stored));
+        } catch (e) {
+          console.error('Failed to parse AI recommendation', e);
+        }
+      }
+    }
+  }, [isOpen]);
 
   // Calculate amount to use
   const getAmount = (): bigint => {
