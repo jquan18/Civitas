@@ -27,6 +27,17 @@ export async function POST(req: Request) {
       chainId as number | undefined
     );
 
+    // DEBUG: Trace wallet address
+    console.log('[API] Chat Request Body:', {
+      templateId,
+      walletAddress,
+      hasWalletAddress: !!walletAddress
+    });
+    console.log('[API] System Prompt has wallet:', systemPrompt.includes('Connected Wallet Address:'));
+    if (walletAddress) {
+      console.log('[API] System Prompt includes explicit address:', systemPrompt.includes(walletAddress));
+    }
+
     // Get configured provider (local proxy in dev, official API in production)
     const google = getGoogleProvider();
 

@@ -79,9 +79,19 @@ export function useTemplateChat() {
   // In AI SDK v6, sendMessage replaces append
   // Create wrapper to match the old append API for backward compatibility
   const append = async (message: { role: string; content: string }) => {
+    // Force fresh body with latest state to ensure wallet/template context is current
+    const requestBody = {
+      templateId: activeTemplate?.id,
+      timezone,
+      walletAddress,
+      chainId,
+    };
+
+    console.log('[useTemplateChat] Appending with explicit body:', requestBody);
+
     if (sendMessage) {
-      console.log('[useTemplateChat] Sending message via append wrapper');
-      return sendMessage({ text: message.content });
+      // @ts-ignore - Valid at runtime for standard chat providers, bypassing strict type defs if they lag
+      return sendMessage({ text: message.content }, { body: requestBody });
     }
     throw new Error('sendMessage not available');
   };
@@ -106,26 +116,22 @@ export function useTemplateChat() {
     return '';
   };
 
-  // Auto-detect template from first user message
+  // Auto-detect template from user messages
   useEffect(() => {
     if (messages.length > 0 && !detectedTemplate && !manualTemplate) {
-      console.log('[Auto-detect] Starting detection, messages:', messages.length);
       const userMessages = messages.filter(m => m.role === 'user');
-      console.log('[Auto-detect] User messages:', userMessages.length);
 
       if (userMessages.length > 0) {
-        console.log('[Auto-detect] First user message:', userMessages[0]);
-        const firstUserMessageText = getMessageText(userMessages[0]);
-        console.log('[Auto-detect] Extracted text:', firstUserMessageText);
+        // Check the latest user message for intent
+        const lastUserMessage = userMessages[userMessages.length - 1];
+        const lastUserMessageText = getMessageText(lastUserMessage);
+        console.log('[Auto-detect] Checking latest user message:', lastUserMessageText);
 
-        const detected = templateRegistry.detectFromIntent(firstUserMessageText);
-        console.log('[Auto-detect] Detection result:', detected?.id || 'null');
+        const detected = templateRegistry.detectFromIntent(lastUserMessageText);
 
         if (detected) {
-          console.log('Auto-detected template:', detected.id);
+          console.log('[Auto-detect] Detected template:', detected.id);
           setDetectedTemplate(detected);
-        } else {
-          console.log('[Auto-detect] No template matched for text:', firstUserMessageText);
         }
       }
     }

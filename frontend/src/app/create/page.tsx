@@ -258,10 +258,10 @@ export default function CreatePage() {
             {/* Template Selector (if no template selected) */}
             {!activeTemplate && (
               <>
-                <div className="flex-1 overflow-y-auto">
-                  {/* Show messages if there's a conversation */}
+                <div className="flex-1 overflow-y-auto flex flex-col">
+                  {/* Show messages (General Chat Mode) - Hides Selector when active */}
                   {messages.length > 0 && (
-                    <div className="p-8 border-b-[3px] border-black pattern-grid">
+                    <div className="flex-1 p-8 pattern-grid relative">
                       {messages.map((message, index) => {
                         const isLastMessage = index === messages.length - 1;
                         return (
@@ -287,12 +287,14 @@ export default function CreatePage() {
                     </div>
                   )}
 
-                  {/* Template Selector */}
-                  <TemplateSelector
-                    templates={allTemplates}
-                    onSelect={handleTemplateSelect}
-                    detectedTemplate={detectedTemplate}
-                  />
+                  {/* Template Selector - Only shown when no messages (Landing Mode) */}
+                  {messages.length === 0 && (
+                    <TemplateSelector
+                      templates={allTemplates}
+                      onSelect={handleTemplateSelect}
+                      detectedTemplate={detectedTemplate}
+                    />
+                  )}
                 </div>
 
                 {/* Input Area - Always visible for AI detection */}
