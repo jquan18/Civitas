@@ -49,7 +49,7 @@ export default function SettingsPage() {
       <div className="p-4 border-b-4 border-black bg-stark-white shrink-0">
         <h2 className="font-headline text-2xl uppercase tracking-tighter mb-2">Settings</h2>
         <div className="flex gap-2 items-center">
-          <span className="text-xs font-display font-bold bg-void-black text-acid-lime px-2 py-1 border border-acid-lime">
+          <span className="text-xs font-display font-bold bg-black text-white !text-white px-2 py-1 border border-acid-lime" style={{ backgroundColor: 'black', color: 'white' }}>
             v1.0.0
           </span>
         </div>

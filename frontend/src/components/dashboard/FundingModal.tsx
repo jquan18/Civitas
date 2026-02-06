@@ -274,14 +274,39 @@ export default function FundingModal({
           {/* State: Idle */}
           {flowState === 'idle' && (
             <>
-              {!isMainnet && isAmountValid && (
-                <DirectFundingStep
-                  destinationAddress={contractAddress}
-                  amount={amount}
-                  chainId={chainId}
-                  onTransferCompleted={handleFundingCompleted}
-                  onError={handleError}
-                />
+              {!isMainnet && (
+                <div className="space-y-4">
+                  {/* Testnet Info Banner */}
+                  <div className="bg-[#FFD600] border-[3px] border-black shadow-[4px_4px_0px_#000] p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-black flex items-center justify-center">
+                        <span className="text-white !text-white font-black text-lg" style={{ color: 'white' }}>!</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-headline text-sm uppercase mb-2 font-bold">
+                          [TESTNET MODE]
+                        </p>
+                        <p className="font-mono text-xs mb-1">
+                          Cross-chain bridge unavailable on Base Sepolia
+                        </p>
+                        <p className="font-mono text-xs text-gray-700">
+                          → Switch to Base Mainnet for full LI.FI cross-chain funding
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Direct Transfer Button */}
+                  {isAmountValid && (
+                    <DirectFundingStep
+                      destinationAddress={contractAddress}
+                      amount={amount}
+                      chainId={chainId}
+                      onTransferCompleted={handleFundingCompleted}
+                      onError={handleError}
+                    />
+                  )}
+                </div>
               )}
               {isMainnet && !isAmountValid && (
                 <StatusBanner variant="info">

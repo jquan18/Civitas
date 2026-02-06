@@ -83,7 +83,7 @@ export default function TransactionsPage() {
 
         {/* Live Feed Badge */}
         <div className="flex gap-2 items-center mt-3">
-          <span className="text-xs font-display font-bold bg-void-black text-acid-lime px-2 py-1 border border-acid-lime">
+          <span className="text-xs font-display font-bold bg-black text-white !text-white px-2 py-1 border border-white" style={{ backgroundColor: 'black', color: 'white' }}>
             LIVE FEED
           </span>
           <span className="w-3 h-3 bg-red-500 border-2 border-black"></span>
