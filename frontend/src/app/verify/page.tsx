@@ -11,7 +11,7 @@ import {
 } from '@/lib/contracts/constants';
 import { formatUnits } from 'viem';
 import { useSearchParams } from 'next/navigation';
-import { Search, Shield, ExternalLink, Copy, Check, ChevronDown } from 'lucide-react';
+import { Search, Shield, ExternalLink, Copy, Check, ChevronDown, User, FileQuestion } from 'lucide-react';
 import NavigationRail from '@/components/layout/NavigationRail';
 import MarqueeTicker from '@/components/layout/MarqueeTicker';
 import { resolveENSServerSide, isENSName, isAddress } from '@/lib/ens/resolver';
@@ -218,6 +218,75 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
   }
 
   if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+    // CASE: User Resolved, but No Contract Found
+    if (processedInput?.basename) {
+      return (
+        <div className="space-y-6">
+          {/* 1. Identity Verified Card (Success State) */}
+          <div className="bg-acid-lime border-4 border-black shadow-[6px_6px_0px_#000] p-6 relative overflow-hidden">
+            <div className="flex items-center gap-4 mb-6 relative z-10">
+              <div className="w-12 h-12 bg-white border-3 border-black flex items-center justify-center">
+                <User className="w-6 h-6 text-black" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-xs uppercase font-bold text-black/60">Identity Verified</p>
+                  <div className="bg-black !text-white text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-wider">Valid</div>
+                </div>
+                <p className="font-display font-bold text-xl uppercase">{processedInput.displayName}</p>
+              </div>
+            </div>
+
+            {/* Resolved Address */}
+            <div className="bg-white/60 border-3 border-black p-3 relative z-10">
+              <p className="font-mono text-[10px] uppercase font-bold text-black/50 mb-1">Resolved Wallet Address</p>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm flex-1 truncate">{processedInput.basename}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(processedInput.basename);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="p-1.5 border-2 border-black hover:bg-black hover:text-white transition-colors cursor-pointer bg-white"
+                  title="Copy Address"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                <a
+                  href={`${blockExplorer}/address/${processedInput.basename}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 border-2 border-black hover:bg-black hover:text-white transition-colors cursor-pointer bg-white"
+                  title="View on Explorer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. No Contract Notice (Info State) */}
+          <div className="bg-white border-4 border-black border-dashed p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 border-3 border-black/30 flex items-center justify-center">
+                <FileQuestion className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="font-display font-bold text-xl uppercase mb-2 text-gray-800">No Contract Found</h3>
+              <p className="font-mono text-sm text-gray-500 max-w-md mx-auto mb-6">
+                This address exists but hasn't deployed a Civitas rental agreement yet.
+              </p>
+
+              <div className="inline-block bg-gray-100 border-2 border-black px-4 py-2 font-mono text-xs text-gray-500">
+                Status: 0 Contracts Deployed
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // CASE: Not Found (Invalid Input / Unknown)
     return (
       <div className="bg-white border-4 border-black shadow-[6px_6px_0px_#000] p-8">
         <div className="text-center">
@@ -246,6 +315,16 @@ function VerifyByName({ name, selectedChainId }: { name: string; selectedChainId
             <p className="font-display font-bold text-xl uppercase">{processedInput?.displayName || name}</p>
           </div>
         </div>
+
+        {/* User Address (Resolved) */}
+        {processedInput?.basename && (
+          <div className="mb-4">
+            <p className="font-mono text-xs uppercase font-bold text-black/60 mb-1">Resolved User Address</p>
+            <div className="font-mono text-sm break-all select-all bg-white/40 p-2 border border-black/20">
+              {processedInput.basename}
+            </div>
+          </div>
+        )}
 
         <div className="bg-white border-3 border-black p-3 flex items-center gap-2">
           <span className="font-mono text-sm flex-1 truncate">{contractAddress}</span>
