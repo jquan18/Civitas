@@ -350,24 +350,37 @@ const scanWalletBalances = tool({
  */
 const getOptimalFundingRoute = tool({
   description:
-    'Calculate and compare optimal routes to fund a contract on Base from multiple potential source tokens/chains. ' +
-    'Returns a ranked list of routes with fees, estimated time, and gas costs.',
+    'Calculate and compare optimal routes to bridge funds to Base from multiple potential source tokens/chains. ' +
+    'Returns a ranked list of routes with fees, estimated time, and gas costs. ' +
+    'If destinationAddress is not provided, defaults to bridging to the user\'s wallet.',
   inputSchema: z.object({
     walletAddress: z.string().describe('User wallet address'),
-    destinationAddress: z.string().describe('The contract address to fund on Base'),
-    amount: z.string().describe('Required amount in USDC (e.g. "1200")'),
+    destinationAddress: z.string().optional().describe('The destination address on Base (contract or wallet). Defaults to walletAddress if not provided.'),
+    amount: z.string().describe('Required amount in USDC (e.g. "1200" or "1")'),
     candidateTokens: z
       .array(
         z.object({
           chainId: z.number(),
           tokenAddress: z.string(),
           symbol: z.string(),
+          balance: z.string().optional().describe('Available balance of this token (e.g. "0.99"). Pass this from scanWalletBalances results.'),
         })
       )
-      .max(5)
-      .describe('List of tokens to compare (from scanWalletBalances results)'),
+      .max(10)
+      .describe('List of tokens to compare (from scanWalletBalances results). Include balance so routes use actual available amounts.'),
   }),
   execute: async ({ walletAddress, destinationAddress, amount, candidateTokens }) => {
+    // Default destination to wallet if not provided
+    const destination = destinationAddress || walletAddress;
+
+    console.log('[getOptimalFundingRoute] Starting route calculation:', {
+      walletAddress,
+      destinationAddress,
+      destination,
+      amount,
+      candidateCount: candidateTokens.length,
+    });
+
     try {
       const routes = await Promise.all(
         candidateTokens.map(async (candidate) => {
@@ -393,10 +406,23 @@ const getOptimalFundingRoute = tool({
             // If token is ETH/MATIC, we need price.
             // Let's assume 1 ETH for the quote if symbol is ETH/MATIC, and `amount` if stable.
 
-            let amountForQuote = parseUnits(amount, decimals).toString();
+            // Use the lesser of requested amount and available balance
+            let effectiveAmount = amount;
+            if (candidate.balance) {
+              const available = parseFloat(candidate.balance);
+              const requested = parseFloat(amount);
+              if (available < requested) {
+                effectiveAmount = candidate.balance;
+              }
+            }
+
+            let amountForQuote = parseUnits(effectiveAmount, decimals).toString();
             if (candidate.symbol === 'ETH' || candidate.symbol === 'MATIC') {
-              // Use a dummy amount that is likely sufficient for a quote, e.g. 0.1 ETH
-              amountForQuote = parseUnits('0.1', decimals).toString();
+              // For native tokens, use actual balance or a small amount for the quote
+              const ethAmount = candidate.balance && parseFloat(candidate.balance) > 0
+                ? candidate.balance
+                : '0.1';
+              amountForQuote = parseUnits(ethAmount, decimals).toString();
             }
 
             const response = await fetch(`https://li.quest/v1/quote?${new URLSearchParams({
@@ -406,7 +432,7 @@ const getOptimalFundingRoute = tool({
               toToken: USDC_ADDRESS[base.id],
               fromAmount: amountForQuote,
               fromAddress: walletAddress,
-              toAddress: destinationAddress,
+              toAddress: destination,
             })}`);
 
             if (!response.ok) return null;
@@ -435,8 +461,14 @@ const getOptimalFundingRoute = tool({
       validRoutes.sort((a, b) => parseFloat(a.gasCostUsd) - parseFloat(b.gasCostUsd));
 
       if (validRoutes.length === 0) {
+        console.log('[getOptimalFundingRoute] No valid routes found');
         return { success: false, error: 'No valid routes found via LI.FI' };
       }
+
+      console.log('[getOptimalFundingRoute] Found routes:', {
+        count: validRoutes.length,
+        bestRoute: validRoutes[0],
+      });
 
       return {
         success: true,

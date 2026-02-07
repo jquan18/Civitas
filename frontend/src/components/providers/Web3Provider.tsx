@@ -9,7 +9,7 @@ import {
   baseAccount,
 } from '@rainbow-me/rainbowkit/wallets';
 import { WagmiProvider, createConfig } from 'wagmi';
-import { base, baseSepolia, arbitrum, optimism } from 'wagmi/chains';
+import { base, baseSepolia, mainnet, arbitrum, optimism, polygon } from 'wagmi/chains';
 import { http } from 'viem';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { useWalletAuth } from '@/hooks/useWalletAuth';
@@ -48,7 +48,7 @@ const connectors = connectorsForWallets(
 // Create wagmi config with explicit wallet connectors from RainbowKit
 // and custom RPC transports for Base chains
 const config = createConfig({
-  chains: [base, baseSepolia, arbitrum, optimism],
+  chains: [base, baseSepolia, mainnet, arbitrum, optimism, polygon],
   connectors,
   transports: {
     [base.id]: http(BASE_MAINNET_RPC, {
@@ -59,8 +59,10 @@ const config = createConfig({
       batch: false,
       timeout: 30000,
     }),
+    [mainnet.id]: http(),
     [arbitrum.id]: http(),
     [optimism.id]: http(),
+    [polygon.id]: http(),
   },
   ssr: true,
 });

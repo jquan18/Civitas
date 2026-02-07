@@ -71,7 +71,7 @@ export default function ScanningAnimation({ progress, onSkip }: ScanningAnimatio
   return (
     <div className="animate-in fade-in zoom-in duration-300">
       <div className="mb-6 text-center">
-        <h3 className="font-headline text-xl uppercase mb-2">LI.FI Advisor</h3>
+        <h3 className="font-headline text-xl uppercase mb-2">Civitas AI Advisor</h3>
         <p className="font-display text-sm text-gray-600">
           Finding the best route for your funds...
         </p>

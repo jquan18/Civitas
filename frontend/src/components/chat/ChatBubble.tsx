@@ -3,6 +3,7 @@
 import { Streamdown } from 'streamdown';
 import { code } from '@streamdown/code';
 import type { UIMessage } from 'ai';
+import { isToolUIPart } from 'ai';
 import { ToolResultDisplay } from './ToolResultDisplay';
 
 interface ChatBubbleProps {
@@ -37,9 +38,7 @@ function getMessageText(message: UIMessage): string {
 function getToolInvocations(message: UIMessage) {
   if (!message.parts) return [];
 
-  return message.parts.filter(
-    (part) => part.type === 'tool-call' || part.type === 'tool-result'
-  );
+  return message.parts.filter((part) => isToolUIPart(part));
 }
 
 export function ChatBubble({ message, timestamp, isLoading = false }: ChatBubbleProps) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useChainId, useAccount } from 'wagmi';
 import { WalletGate } from '@/components/wallet/WalletGate';
 import { useTemplateChat } from '@/hooks/useTemplateChat';
@@ -25,7 +25,8 @@ import {
 import { CONTRACT_TEMPLATES, getCivitasEnsDomain, type ContractTemplate } from '@/lib/contracts/constants';
 import { isENSName, formatAddress } from '@/lib/ens/resolver';
 import { LiFiBridgeStep, DirectFundingStep, BalancePoller } from '@/components/deploy';
-import { isLiFiSupported, LIFI_SUPPORTED_CHAIN_IDS } from '@/lib/lifi';
+import { BridgeRecommendationModal } from '@/components/bridge';
+import { isToolUIPart, getToolName } from 'ai';
 
 export default function CreatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,10 @@ export default function CreatePage() {
     sourceTokenAddress: string;
     sourceTokenSymbol: string;
   } | null>(null);
+  const [showBridgeModal, setShowBridgeModal] = useState(false);
+  const [bridgeAmount, setBridgeAmount] = useState<string | null>(null);
+  const [bridgeCompleted, setBridgeCompleted] = useState(false);
+  const processedToolCallIds = useRef<Set<string>>(new Set());
 
   const allTemplates = templateRegistry.getAll();
 
@@ -85,9 +90,18 @@ export default function CreatePage() {
   useEffect(() => {
     for (const message of messages) {
       if (!message.parts) continue;
+
       for (const part of message.parts) {
-        if (part.type === 'tool-result' && (part as any).toolName === 'getOptimalFundingRoute') {
-          const result = (part as any).result;
+        if (!isToolUIPart(part)) continue;
+        if (part.state !== 'output-available' || !part.output) continue;
+        if (processedToolCallIds.current.has(part.toolCallId)) continue;
+
+        processedToolCallIds.current.add(part.toolCallId);
+        const toolName = getToolName(part);
+
+        // Handle getOptimalFundingRoute → show bridge modal
+        if (toolName === 'getOptimalFundingRoute') {
+          const result = part.output as any;
           if (result?.success && result.routes?.length > 0) {
             setAiRoutes(result.routes);
             const best = result.recommendation?.bestRoute || result.routes[0];
@@ -97,7 +111,15 @@ export default function CreatePage() {
               sourceTokenSymbol: best.sourceToken,
             };
             setAiRecommendation(rec);
-            // Persist for dashboard (survives page navigation)
+
+            // Extract actual bridge amount from route data (fromAmount is in raw token units, 6 decimals for USDC)
+            const rawAmount = best.action?.fromAmount;
+            if (rawAmount) {
+              setBridgeAmount((Number(rawAmount) / 1e6).toString());
+            }
+
+            setShowBridgeModal(true);
+
             if (typeof window !== 'undefined') {
               localStorage.setItem('civitas_ai_recommendation', JSON.stringify(rec));
             }
@@ -105,7 +127,7 @@ export default function CreatePage() {
         }
       }
     }
-  }, [messages]);
+  }, [messages, chainId]);
 
   const onSubmit = async () => {
     console.log('[CreatePage] onSubmit called', { input, hasAppend: !!append, hasSetInput: !!setInput });
@@ -449,6 +471,14 @@ export default function CreatePage() {
                   </div>
                 )}
 
+                {bridgeCompleted && (
+                  <div className="mt-4">
+                    <StatusBanner variant="success">
+                      ✓ Bridge transaction started! Funds will arrive shortly.
+                    </StatusBanner>
+                  </div>
+                )}
+
                 {/* Deployment Status Messages */}
                 {deploymentError && (
                   <div className="mt-4">
@@ -592,6 +622,40 @@ export default function CreatePage() {
             )}
           </div>
         </div>
+
+        {/* Bridge Recommendation Modal */}
+        {/* Bridges funds to user's wallet on Base (not contract address) */}
+        {/* Users need USDC + ETH on Base before deploying contracts */}
+        {(() => {
+          const shouldShow = showBridgeModal && aiRecommendation && aiRoutes && aiRoutes.length > 0 && walletAddress;
+
+          if (showBridgeModal) {
+            console.log('[CreatePage] Bridge modal render check:', {
+              showBridgeModal,
+              hasAiRecommendation: !!aiRecommendation,
+              hasAiRoutes: !!aiRoutes,
+              routesLength: aiRoutes?.length,
+              hasWalletAddress: !!walletAddress,
+              shouldShow,
+            });
+          }
+
+          return shouldShow ? (
+            <BridgeRecommendationModal
+              isOpen={showBridgeModal}
+              onClose={() => setShowBridgeModal(false)}
+              route={aiRoutes[0]} // Best route
+              walletAddress={walletAddress}
+              amount={bridgeAmount || extractedConfig?.rentAmount || extractedConfig?.fundingGoal || extractedConfig?.allowancePerIncrement || '0'}
+              onBridgeCompleted={() => {
+                setBridgeCompleted(true);
+              }}
+              onDecline={() => {
+                setShowBridgeModal(false);
+              }}
+            />
+          ) : null;
+        })()}
       </div>
     </WalletGate>
   );

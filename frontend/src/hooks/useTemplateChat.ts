@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
+import { DefaultChatTransport, isToolUIPart } from 'ai';
 import { useState, useEffect, useMemo } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { templateRegistry } from '@/lib/templates/registry';
@@ -183,11 +183,17 @@ export function useTemplateChat() {
 
   // Helper functions for extracting tool data from messages
   const getMessageToolCalls = (message: typeof messages[number]) => {
-    return message.parts.filter((part: any) => part.type === 'tool-call');
+    if (!message.parts) return [];
+    return message.parts.filter(
+      (part: any) => isToolUIPart(part) && (part.state === 'input-streaming' || part.state === 'input-available')
+    );
   };
 
   const getMessageToolResults = (message: typeof messages[number]) => {
-    return message.parts.filter((part: any) => part.type === 'tool-result');
+    if (!message.parts) return [];
+    return message.parts.filter(
+      (part: any) => isToolUIPart(part) && part.state === 'output-available'
+    );
   };
 
   const handleTemplateSelect = (templateId: string) => {

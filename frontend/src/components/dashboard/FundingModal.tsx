@@ -104,14 +104,42 @@ export default function FundingModal({
 
       setAnalysisRoutes(data.routes);
 
-      // Find index of best route
-      if (data.recommendation && data.recommendation.bestRoute) {
-        const bestIndex = data.routes.findIndex((r: any) =>
+      // Check for AI recommendation in localStorage
+      let bestIndex = -1;
+
+      // Try to find AI recommended route first
+      if (typeof window !== 'undefined') {
+        try {
+          const storedRec = localStorage.getItem('civitas_ai_recommendation');
+          if (storedRec) {
+            const rec = JSON.parse(storedRec);
+            // Look for matching route
+            const aiIndex = data.routes.findIndex((r: any) =>
+              r.sourceChainId === rec.sourceChainId &&
+              (r.sourceToken === rec.sourceTokenSymbol || r.sourceTokenAddress === rec.sourceTokenAddress)
+            );
+
+            if (aiIndex >= 0) {
+              bestIndex = aiIndex;
+              console.log('Using AI recommended route:', rec);
+              // Optional: Clear it so it doesn't persist forever, or keep it?
+              // Let's keep it for now as the user might close/reopen
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse AI recommendation', e);
+        }
+      }
+
+      // Fallback to API recommendation if no AI match found
+      if (bestIndex === -1 && data.recommendation && data.recommendation.bestRoute) {
+        bestIndex = data.routes.findIndex((r: any) =>
           r.sourceChainId === data.recommendation.bestRoute.sourceChainId &&
           r.sourceToken === data.recommendation.bestRoute.sourceToken
         );
-        setSelectedRouteIndex(bestIndex >= 0 ? bestIndex : 0);
       }
+
+      setSelectedRouteIndex(bestIndex >= 0 ? bestIndex : 0);
 
       // If no routes found, show error
       if (!data.routes || data.routes.length === 0) {

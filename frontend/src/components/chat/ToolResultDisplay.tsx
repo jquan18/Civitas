@@ -1,14 +1,16 @@
 import React from 'react';
+import { getToolName } from 'ai';
 
 interface ToolResultDisplayProps {
-  toolInvocation: any; // Tool call or tool result part from UIMessage
+  toolInvocation: any; // Tool UI part from UIMessage
 }
 
 export function ToolResultDisplay({ toolInvocation }: ToolResultDisplayProps) {
-  const { type, toolName, result } = toolInvocation;
+  const { state } = toolInvocation;
+  const toolName = getToolName(toolInvocation);
 
-  // Show loading state (tool-call type)
-  if (type === 'tool-call') {
+  // Loading state (tool is being called or processing)
+  if (state === 'input-streaming' || state === 'input-available') {
     return (
       <div className="mt-3 border-2 border-black bg-gray-100 p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex items-center gap-2">
@@ -21,17 +23,31 @@ export function ToolResultDisplay({ toolInvocation }: ToolResultDisplayProps) {
     );
   }
 
-  // Show result (tool-result type)
-  if (type === 'tool-result') {
+  // Error state
+  if (state === 'output-error') {
+    return (
+      <div className="mt-3 border-2 border-red-600 bg-red-50 p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="flex items-start gap-2">
+          <span className="text-lg font-bold">✗</span>
+          <div className="flex-1 font-mono text-sm">
+            <div className="font-bold text-red-700">{getToolActionText(toolName)} Failed</div>
+            <div className="mt-1 text-red-600">{toolInvocation.errorText || 'Unknown error'}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Result state — use .output (NOT .result)
+  if (state === 'output-available') {
+    const result = toolInvocation.output;
     const success = result?.success ?? false;
     const borderColor = success ? 'border-green-600' : 'border-red-600';
     const bgColor = success ? 'bg-green-50' : 'bg-red-50';
     const icon = success ? '✓' : '✗';
 
     return (
-      <div
-        className={`mt-3 border-2 ${borderColor} ${bgColor} p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
-      >
+      <div className={`mt-3 border-2 ${borderColor} ${bgColor} p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
         <div className="flex items-start gap-2">
           <span className="text-lg font-bold">{icon}</span>
           <div className="flex-1 font-mono text-sm">

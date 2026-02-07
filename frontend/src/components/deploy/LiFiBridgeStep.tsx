@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConfig } from 'wagmi';
-import { getRoutes, executeRoute, type Route, type RoutesRequest } from '@lifi/sdk';
+import { getPublicClient } from '@wagmi/core';
+import { getRoutes, executeRoute, type Route, type RoutesRequest, type TransactionRequestParameters } from '@lifi/sdk';
 import { configureLiFiSDK } from '@/lib/lifi/sdk-config';
 import { LIFI_SUPPORTED_CHAIN_IDS, USDC_ADDRESSES } from '@/lib/lifi/constants';
 import { formatUnits } from 'viem';
@@ -182,6 +183,7 @@ export function LiFiBridgeStep({
     const execute = async () => {
       try {
         const executedRoute = await executeRoute(selectedRoute, {
+          updateTransactionRequestHook: applyGasBuffer,
           updateRouteHook(updatedRoute) {
             // Track execution progress
             const currentStep = updatedRoute.steps?.find(
@@ -211,11 +213,11 @@ export function LiFiBridgeStep({
 
         // Detect gas balance errors and provide clear message
         let errorMessage = err.message || 'Bridge execution failed';
-        if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError')) {
+        if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError') || err.message?.includes('fee cap') || err.message?.includes('maxFeePerGas')) {
           const chainInfo = sourceChains.find(c => c.id === fromChainId);
           const nativeToken = chainInfo?.nativeToken || 'ETH';
           const chainName = chainInfo?.name || 'source chain';
-          errorMessage = `Insufficient ${nativeToken} for gas fees on ${chainName}. You need a small amount of ${nativeToken} (~$1-2) to pay for transaction fees, even when bridging USDC.`;
+          errorMessage = `Gas fee estimation issue on ${chainName}. This can happen when gas prices change rapidly. Please try again.`;
         }
 
         setError(errorMessage);
@@ -231,6 +233,35 @@ export function LiFiBridgeStep({
   useEffect(() => {
     configureLiFiSDK(wagmiConfig);
   }, [wagmiConfig]);
+
+  // Fix for L2 gas estimation: the LI.FI SDK intentionally leaves maxFeePerGas undefined,
+  // letting the wallet estimate it. Some wallets (e.g. Coinbase Wallet) estimate too tightly
+  // on Arbitrum, causing "maxFeePerGas less than baseFee" errors. We fetch the current base
+  // fee and set maxFeePerGas explicitly with a 50% buffer so the wallet doesn't underestimate.
+  const applyGasBuffer = async (txRequest: TransactionRequestParameters) => {
+    const updated = { ...txRequest };
+
+    if (!updated.maxFeePerGas && updated.chainId) {
+      try {
+        const publicClient = getPublicClient(wagmiConfig, { chainId: updated.chainId });
+        if (publicClient) {
+          const block = await publicClient.getBlock();
+          if (block?.baseFeePerGas) {
+            updated.maxFeePerGas = (block.baseFeePerGas * 150n) / 100n;
+            if (!updated.maxPriorityFeePerGas) {
+              updated.maxPriorityFeePerGas = 0n;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[LiFiBridge] Failed to fetch base fee for gas buffer:', e);
+      }
+    } else if (updated.maxFeePerGas) {
+      updated.maxFeePerGas = (updated.maxFeePerGas * 150n) / 100n;
+    }
+
+    return updated;
+  };
 
   // Destination is always Base USDC
   const toChainId = LIFI_SUPPORTED_CHAIN_IDS.BASE_MAINNET;
@@ -313,6 +344,7 @@ export function LiFiBridgeStep({
 
     try {
       const executedRoute = await executeRoute(selectedRoute, {
+        updateTransactionRequestHook: applyGasBuffer,
         updateRouteHook(updatedRoute) {
           // Track execution progress
           const currentStep = updatedRoute.steps?.find(
@@ -342,11 +374,11 @@ export function LiFiBridgeStep({
 
       // Detect gas balance errors and provide clear message
       let errorMessage = err.message || 'Bridge execution failed';
-      if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError')) {
+      if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError') || err.message?.includes('fee cap') || err.message?.includes('maxFeePerGas')) {
         const chainInfo = sourceChains.find(c => c.id === fromChainId);
         const nativeToken = chainInfo?.nativeToken || 'ETH';
         const chainName = chainInfo?.name || 'source chain';
-        errorMessage = `Insufficient ${nativeToken} for gas fees on ${chainName}. You need a small amount of ${nativeToken} (~$1-2) to pay for transaction fees, even when bridging USDC.`;
+        errorMessage = `Gas fee estimation issue on ${chainName}. This can happen when gas prices change rapidly. Please try again.`;
       }
 
       setError(errorMessage);
