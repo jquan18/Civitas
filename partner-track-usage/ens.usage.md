@@ -1,0 +1,18 @@
+# ENS Integration Files
+
+| File Path | Functional Description |
+| :--- | :--- |
+| [contracts/src/CivitasFactory.sol](https://github.com/jquan18/Civitas/blob/main/contracts/src/CivitasFactory.sol) | **Core on-chain ENS integration:** Implements `createSubdomainAndSetRecords()`, `setContractENSRecords()`, `updateENSRecord()`, and `batchUpdateENSRecords()`. It interacts with the ENS Registry and L2 Resolver to create subdomains and write 11–14 text records per contract. |
+| [contracts/src/interfaces/IENSResolver.sol](https://github.com/jquan18/Civitas/blob/main/contracts/src/interfaces/IENSResolver.sol) | **Solidity interfaces:** Contains definitions for `IENSTextResolver`, `IENSAddrResolver`, `IENSRegistry`, and `IENSReverseRegistrar`. |
+| [contracts/src/RentVault.sol](https://github.com/jquan18/Civitas/blob/main/contracts/src/RentVault.sol) | **Metadata logic:** `getENSMetadata()` returns 11 key/value pairs including type, status, rent amount, due date, deposits, and currency. |
+| [contracts/src/GroupBuyEscrow.sol](https://github.com/jquan18/Civitas/blob/main/contracts/src/GroupBuyEscrow.sol) | **Metadata logic:** `getENSMetadata()` returns 14 key/value pairs including goal, deposits, expiry, participant count, and voting threshold. |
+| [contracts/src/StableAllowanceTreasury.sol](https://github.com/jquan18/Civitas/blob/main/contracts/src/StableAllowanceTreasury.sol) | **Metadata logic:** `getENSMetadata()` returns 13 key/value pairs including allowance, approval counter, claimed/unclaimed count, and balance. |
+| [frontend/src/app/verify/page.tsx](https://github.com/jquan18/Civitas/blob/main/frontend/src/app/verify/page.tsx) | **Public verification page:** Reads 25 ENS text record keys across all templates from the L2 Resolver to display contract terms without a wallet connection. |
+| [frontend/src/hooks/useContractENSData.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/hooks/useContractENSData.ts) | **React hook:** Facilitates reading ENS text records via wagmi's `useReadContract` against the L2 Resolver. |
+| [frontend/src/lib/ens/resolver.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/lib/ens/resolver.ts) | **ENS resolution logic:** Resolves L1 `.eth` names via mainnet and L2 `.base.eth`/`.basetest.eth` via the Base resolver. |
+| [frontend/src/lib/ai/tools.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/lib/ai/tools.ts) | **AI agent resolveENS tool:** Enables users to reference participants by ENS name in conversation; the agent resolves these to addresses automatically. |
+| [frontend/src/app/api/resolve-ens/route.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/app/api/resolve-ens/route.ts) | **Server-side API:** ENS resolution endpoint used by the AI agent. |
+| [frontend/src/hooks/useSyncENS.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/hooks/useSyncENS.ts) | **Sync Hook:** Synchronizes on-chain ENS metadata with off-chain Supabase records. |
+| [frontend/src/app/api/generate-name/route.ts](https://github.com/jquan18/Civitas/blob/main/frontend/src/app/api/generate-name/route.ts) | **AI Generation:** Generates semantic basenames from contract context (e.g., "downtown-studio-6mo"). |
+| [contracts/test/ENSIntegration.t.sol](https://github.com/jquan18/Civitas/blob/main/contracts/test/ENSIntegration.t.sol) | **Foundry tests:** Unit tests for verifying ENS subdomain creation and text record read/write functionality. |
+| [contracts/script/DeployCivitasWithENS.s.sol](https://github.com/jquan18/Civitas/blob/main/contracts/script/DeployCivitasWithENS.s.sol) | **Deployment script:** Configures the factory with the ENS Registry, Resolver, and parent node during deployment. |
