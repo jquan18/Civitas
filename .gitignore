@@ -141,3 +141,18 @@ vite.config.ts.timestamp-*
 .agent
 .cursor
 .mcp.json
+.claudeignore
+
+# Mac system files
+.DS_Store
+
+# Internal development documentation
+docs/
+design-system/
+
+# Development shell scripts
+clear-stuck-tx.sh
+test-deploy.sh
+contracts/deploy-with-ens.sh
+contracts/test-ens-flow.sh
+backend/railway-env-setup.sh

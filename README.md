@@ -1,420 +1,129 @@
-# Civitas - AI-Powered Cross-Chain Rental Agreements
+# Civitas - AI-Powered Cross-Chain Agreement Platform
 
-**"The first AI Agent that negotiates, deploys, and funds cross-chain agreements in a single click."**
+**Civitas** transforms natural language into deployed, funded, and verifiable smart contracts — all within a single conversational flow.
 
-Civitas is an AI-powered platform that enables users to create rental agreements on the blockchain by simply chatting with an AI. The system handles natural language processing, smart contract deployment, and cross-chain funding automatically.
-
-Built for **ETH HackMoney 2026** - targeting:
-- 🏆 **Best AI x LI.FI Smart App** ($2,000)
-- 🏆 **Most Creative Use of ENS for DeFi** ($1,500)
+Our mission is to eliminate the complexity barrier between everyday users and decentralized finance by letting an AI agent handle negotiation, deployment, and cross-chain funding so that anyone can create trustless financial agreements without writing a single line of code or understanding blockchain mechanics.
 
 ---
 
-## 🌟 Key Features
+## 🤖 Agentic AI at the Core
 
-### Three Core Pillars
+Civitas is built around a conversational AI agent powered by **Gemini 3 Flash** and the **Vercel AI SDK**. Rather than presenting users with intimidating forms, the agent engages in natural dialogue — asking one clarifying question at a time to extract structured contract configurations validated against strict Zod schemas.
 
-1. **Logic (AI)** - Gemini 2.0 Flash converts natural language to smart contract configuration
-2. **Liquidity (LI.FI)** - Cross-chain bridging from any token on any chain to Base USDC
-3. **Identity (ENS/Basenames)** - Human-readable contract addresses (e.g., `downtown-studio-6mo.civitas.base.eth`)
+The agent is equipped with five specialized tools that it invokes autonomously:
 
-### Smart Contract Features
+1. **ENS Name Resolution**: Resolves names across L1 and L2.
+2. **Ethereum Address Validation**: Checks if addresses are EOAs or contracts.
+3. **USDC Balance Checking**: Verifies funds on Base.
+4. **Proactive Multi-Chain Wallet Scanning**: Scans Ethereum, Base, Arbitrum, Optimism, and Polygon simultaneously.
+5. **Optimal Cross-Chain Funding Route Calculation**: Queries LI.FI for the cheapest and fastest bridging route.
 
-- ✅ **Balance-Based Activation** - Handles async LI.FI funding without explicit deposit function
-- ✅ **Permissionless Rent Release** - Anyone can trigger rent payments (no keeper needed)
-- ✅ **CREATE2 Deployment** - Deterministic addresses enable LI.FI pre-funding
-- ✅ **30-Day Termination Notice** - Fair early termination with pro-rata refunds
-- ✅ **Security Hardened** - ReentrancyGuard, SafeERC20, hardcoded USDC
-
-### Frontend Features
-
-- ✅ **Streaming Chat Interface** - Real-time AI conversation with Gemini
-- ✅ **Auto-Config Extraction** - Automatically extracts tenant, amount, duration
-- ✅ **Real-Time Preview** - Contract card updates as you chat
-- ✅ **Split-Screen Layout** - Chat on left, preview on right
-- ✅ **Dashboard** - View all rental agreements with status tracking
+When a user says "I'm ready to fund," the agent proactively scans their wallet across all supported chains, identifies where their assets sit, queries LI.FI for the cheapest and fastest bridging route, and presents a recommendation — all without the user needing to understand bridging, gas costs, or chain differences.
 
 ---
 
-## 🏗️ Architecture
+## ⚙️ R2F2C: Requirement-to-FSM-to-Code
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         FRONTEND                                 │
-│  Next.js 15 + React Server Components + RainbowKit v2           │
-├─────────────────────────────────────────────────────────────────┤
-│  /create      → Split-screen chat + contract preview            │
-│  /dashboard   → Contract list with state tracking               │
-│  /api/chat    → Streaming chat with Gemini 2.0 Flash           │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                   SMART CONTRACTS (Base L2)                      │
-├─────────────────────────────────────────────────────────────────┤
-│  RentalFactory.sol                                               │
-│  ├── deployRental() → CREATE2 + Minimal Proxy (EIP-1167)       │
-│  ├── predictRentalAddress() → Deterministic address calc        │
-│  └── Emits RentalDeployed event                                 │
-│                                                                  │
-│  RecurringRent.sol (Implementation)                              │
-│  ├── States: Deployed → Active → Completed/Terminated           │
-│  ├── Balance-based activation (handles async funding)           │
-│  ├── Permissionless rent release                                 │
-│  └── Early termination with 30-day notice                       │
-└─────────────────────────────────────────────────────────────────┘
-```
+Civitas follows a **Requirement-to-FSM-to-Code (R2F2C)** pipeline. Users express requirements in plain English (e.g., "I want to split rent with my two roommates at $1,000/month for 6 months"). The AI agent maps these requirements onto one of three finite state machine templates:
+
+* **RentVault**: Multi-tenant rent collection with landlord withdrawal and refund states.
+* **GroupBuyEscrow**: Collective purchases with funding, delivery confirmation, majority voting, and timelock refund states.
+* **StableAllowanceTreasury**: Counter-based periodic allowances with pause, unpause, and termination states.
+
+Each template implements a formally defined state machine in Solidity with explicit transitions and guards. The AI then populates the FSM parameters (participants, amounts, dates, shares in basis points) and deploys the configured contract via a gas-efficient **EIP-1167 proxy clone** from our `CivitasFactory`, using **CREATE2** for deterministic address prediction.
 
 ---
 
-## 🚀 Quick Start
+## 🌉 Cross-Chain Liquidity via LI.FI
 
-### Prerequisites
+Funding a contract shouldn't require users to be on the right chain with the right token. Civitas integrates the **LI.FI SDK** to enable funding from 60+ source chains.
 
-- Node.js 18+ and pnpm
-- Foundry (for smart contracts)
-- Gemini API key
-- WalletConnect project ID
+The AI agent first scans the user's balances across five major chains, then queries LI.FI's routing engine to find the optimal path — comparing gas costs, execution duration, and bridging tools (Across, Hop, Stargate, etc.). The destination is locked to **Base USDC** at the contract's predicted CREATE2 address, so funds bridge directly into the contract.
 
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/civitas.git
-cd civitas
-
-# Install frontend dependencies
-cd frontend
-pnpm install
-
-# Install contract dependencies
-cd ../contracts
-forge install
-```
-
-### Environment Setup
-
-**Frontend (.env.local):**
-```bash
-cd frontend
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-```env
-# AI
-GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
-
-# Wallet
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
-
-# RPC
-NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
-NEXT_PUBLIC_MAINNET_RPC_URL=https://eth.llamarpc.com
-
-# Contracts (after deployment)
-NEXT_PUBLIC_FACTORY_ADDRESS=0x...
-NEXT_PUBLIC_RENTAL_IMPLEMENTATION=0x...
-```
-
-**Contracts (.env):**
-```bash
-cd contracts
-cp .env.example .env
-```
-
-Edit `.env`:
-```env
-PRIVATE_KEY=your_private_key_here
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-BASESCAN_API_KEY=your_basescan_api_key
-```
-
-### Development
-
-**Frontend:**
-```bash
-cd frontend
-pnpm dev
-# Opens at http://localhost:3000
-```
-
-**Smart Contracts:**
-```bash
-cd contracts
-
-# Run tests
-forge test -vv
-
-# Deploy to Base Sepolia (testnet)
-source .env
-forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify
-
-# Deploy to Base Mainnet
-forge script script/Deploy.s.sol --rpc-url base --broadcast --verify
-```
+Contracts use **balance-based activation** — once sufficient USDC arrives (even after a 1-5 minute bridge delay), the contract automatically becomes active without any additional user action.
 
 ---
 
-## 📖 Usage Guide
+## 🆔 Decentralized Identity & On-Chain Verification via ENS
 
-### Creating a Rental Agreement
+Every deployed contract receives a human-readable Basename (ENS on Base) such as `downtown-studio-6mo.civitas.base.eth`.
 
-1. **Connect Wallet** - Click "Connect Wallet" and select your wallet
-2. **Start Chat** - Navigate to `/create` and describe your rental agreement
-3. **AI Extracts Details** - Chat with AI to define tenant, monthly amount, and duration
-4. **Review Preview** - Contract card updates in real-time as you chat
-5. **Deploy** - Click "Sign & Fund" when config is complete
-6. **Confirm Transactions** - Sign deployment transaction
+But Civitas goes far beyond simple naming — each contract stores **11-14 ENS text records on-chain** containing full contract metadata:
 
-### Example Conversation
+* Type & Status
+* Rent/Funding Amounts
+* Due Dates
+* Participant Count
+* Voting Thresholds
+* Funding Progress
+* Currency Details
+* Legal Classification
 
-```
-You: I want to rent my apartment to bob.eth for 6 months at 1000 USDC per month
-
-AI: Great! Let me confirm the details:
-- Tenant: bob.eth
-- Monthly rent: 1000 USDC
-- Duration: 6 months
-- Total amount: 6000 USDC
-
-Is this correct?
-
-You: Yes
-
-AI: Perfect! Your rental agreement is ready to deploy. Click "Sign & Fund" to create it on-chain.
-```
-
-### Dashboard
-
-View all your rental agreements at `/dashboard`:
-
-- **Total Contracts** - See all deployed agreements
-- **Active Contracts** - Currently running rentals
-- **Completed Contracts** - Successfully finished agreements
-- **Contract States**:
-  - 🔴 **Ghost** - Deployed but not funded
-  - 🟢 **Active** - Running normally
-  - ✅ **Completed** - Successfully finished
-  - 🟣 **Terminating** - In 30-day notice period
-  - ⚫ **Terminated** - Early termination complete
+This transforms ENS from a naming system into a **decentralized contract registry**. Anyone can look up a contract's terms and status through our public verification page without connecting a wallet — enabling transparent, trustless discovery and audit of agreements.
 
 ---
 
-## 🧪 Testing
+## 🛠️ Tech Stack
 
-### Smart Contract Tests
-
-```bash
-cd contracts
-
-# Run all tests
-forge test -vv
-
-# Run specific test
-forge test --match-test testDeployRental -vv
-
-# Run with gas reporting
-forge test --gas-report
-
-# Run with coverage
-forge coverage
-```
-
-**Test Results:**
-```
-RecurringRentTest
-✓ testInitialization (7 tests, all passing)
-✓ testActivationWhenFunded
-✓ testReleaseRentAfterOneMonth
-✓ testFinalizeTermination
-
-RentalFactoryTest
-✓ testDeployRental (3 tests, all passing)
-✓ testPredictedAddressMatches
-✓ testDifferentUsersGetDifferentAddresses
-```
-
-### Frontend Build
-
-```bash
-cd frontend
-
-# Type checking
-pnpm build
-
-# This will show TypeScript errors if any exist
-```
+* **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
+* **Wallet Connectivity**: RainbowKit v2, wagmi v2
+* **Smart Contracts**: Solidity 0.8.20, Foundry (Deployed on Base L2)
+* **Backend**: Express.js with SWC builds
+* **Database**: Supabase (PostgreSQL 17 with Row Level Security)
+* **AI Layer**: Google Gemini 3 Flash (via Vercel AI SDK)
+* **Cross-Chain**: LI.FI SDK
+* **Identity**: ENS (Base L2 Registry & Text Resolver)
 
 ---
 
-## 📂 Project Structure
+## 🏗️ How it's Made
 
-```
-civitas/
-├── frontend/                    # Next.js 15 frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── create/          # Split-screen chat interface
-│   │   │   ├── dashboard/       # Contract list
-│   │   │   └── api/             # API routes (chat, extract-config, generate-name)
-│   │   ├── components/
-│   │   │   ├── chat/            # ChatInterface
-│   │   │   ├── contract/        # ContractCard
-│   │   │   ├── dashboard/       # Dashboard components
-│   │   │   ├── deploy/          # DeployModal
-│   │   │   └── providers/       # Web3Provider
-│   │   ├── hooks/               # useRentalChat, useContractDeploy
-│   │   └── lib/
-│   │       ├── ai/              # Schemas and prompts
-│   │       ├── contracts/       # ABIs, constants, utilities
-│   │       └── ens/             # ENS resolution
-│   └── package.json
-├── contracts/                   # Foundry smart contracts
-│   ├── src/
-│   │   ├── RecurringRent.sol   # Rental agreement implementation
-│   │   └── RentalFactory.sol   # CREATE2 factory
-│   ├── test/                    # Foundry tests
-│   ├── script/                  # Deployment scripts
-│   └── foundry.toml
-└── docs/                        # Design and planning docs
-```
+Civitas is built as a full-stack dApp with a **Next.js 15 App Router** frontend, **Solidity 0.8.20** smart contracts compiled with **Foundry**, and an **Express.js** backend.
 
----
+### The AI Agent (Gemini 3 Flash + Vercel AI SDK)
 
-## 🔑 Key Technical Decisions
+At the core is a conversational AI agent powered by **Google's Gemini 3 Flash**, integrated through the **Vercel AI SDK's `streamText()` API** running on Edge Runtime. Instead of forms, users describe what they want in plain English. The agent is equipped with agentic tools it invokes autonomously mid-conversation:
 
-### Why Balance-Based Activation?
+* `resolveENS`: Resolves .eth, .base.eth, and .basetest.eth names.
+* `validateAddress`: Checks if an address is an EOA or contract.
+* `checkBalance`: Reads USDC balances on Base.
+* `scanWalletBalances`: Proactively scans ETH and USDC across Ethereum, Base, Arbitrum, Optimism, and Polygon simultaneously using parallel viem clients.
+* `getOptimalFundingRoute`: Queries LI.FI's routing engine to compare gas costs, execution time, and bridging tools.
 
-**Problem:** LI.FI bridge transactions are async (1-5 min). If we require a specific `deposit()` function call, funds could arrive but activation could fail.
+After each AI response, a background `extract-config` endpoint calls `generateObject()` with template-specific **Zod schemas** to pull structured configuration (addresses, amounts, dates, participant shares) from the conversation. This powers a real-time contract preview card that updates live as the user chats.
 
-**Solution:** Contract checks `USDC.balanceOf(address(this)) >= required`. Doesn't matter HOW funds arrived - direct transfer, LI.FI bridge, or even airdrop.
+### R2F2C: Requirement-to-FSM-to-Code
 
-### Why CREATE2?
+The system follows a Requirement-to-FSM-to-Code pipeline. Natural language requirements map onto formally defined finite state machine templates implemented in Solidity:
 
-**Problem:** Need to know contract address before deployment for LI.FI pre-funding.
+* **RentVault**: States (Initialized → Fully Funded → Withdrawn/Refunded)
+* **GroupBuyEscrow**: States (Funding → Goal Reached → Delivery Confirmed → Voting → Released/Refunded)
+* **StableAllowanceTreasury**: States (Active ↔ Paused → Terminated)
 
-**Solution:** CREATE2 provides deterministic addresses. Calculate address → fund via LI.FI → deploy to same address.
+The AI extracts FSM parameters, and the `CivitasFactory` deploys the configured state machine as a gas-efficient **EIP-1167 minimal proxy clone**. **CREATE2** deterministic addressing (`salt = keccak256(creator, basename)`) lets us predict the contract address before deployment, which is critical for the funding step.
 
-### Why Gemini 2.0 Flash?
+### LI.FI Integration — Cross-Chain Liquidity
 
-- **Speed:** Flash-level latency for real-time chat
-- **Cost:** $0.50 input / $3.00 output per 1M tokens
-- **Structured Output:** Supports Zod schemas via Vercel AI SDK
-- **Context:** 1M token window handles long conversations
+LI.FI is what makes Civitas chain-agnostic. Our `LiFiBridgeStep` component integrates the LI.FI SDK directly — calling `getRoutes()` with the source chain/token and locking the destination to Base USDC at the predicted CREATE2 contract address. It executes via `executeRoute()` with a custom `updateTransactionRequestHook` that applies a **150% gas buffer** on L2 `baseFeePerGas`.
+
+More importantly, LI.FI powers the AI agent itself: the `getOptimalFundingRoutes` tool queries LI.FI's routing API across every chain where the user holds funds, comparing cost and speed. Funds bridge directly to the contract address, and the contract activates automatically via balance-based detection once sufficient USDC arrives.
+
+### ENS — On-Chain Contract Registry
+
+We use ENS as a decentralized contract metadata store. The `CivitasFactory` integrates directly with the **Base L2 ENS Registry** and **Text Resolver** contracts. At deploy time, `createSubdomainAndSetRecords()` registers a semantic Basename (e.g., `downtown-studio-a3f9e2c1.civitas.base.eth`), sets forward address resolution, and writes 11-14 ENS text records on-chain per contract. This includes `contract.type`, `contract.status`, `contract.rent.amount`, `contract.escrow.participantCount`, etc.
+
+This means anyone can look up a contract's full terms and live status by querying its ENS name — no wallet connection or proprietary API required. Our public `/verify` page reads these records to provide trustless contract verification.
+
+### How it all connects
+
+1. User chats with AI → AI extracts config + resolves ENS names + scans wallets.
+2. Factory deploys EIP-1167 clone at predicted CREATE2 address.
+3. ENS records written on-chain.
+4. LI.FI bridges funds from any chain directly to contract.
+5. Balance triggers activation.
+
+**One conversation, one click, fully on-chain.**
 
 ---
 
-## 📝 Smart Contract API
-
-### RentalFactory
-
-```solidity
-function deployRental(
-    address landlord,
-    address tenant,
-    uint256 monthlyAmount,
-    uint8 totalMonths,
-    string calldata suggestedName
-) external returns (address rental)
-
-function predictRentalAddress(
-    address deployer,
-    string calldata suggestedName
-) external view returns (address)
-```
-
-### RecurringRent
-
-```solidity
-// State transitions
-enum State { Deployed, Active, Completed, TerminationPending, Terminated }
-
-// Core functions
-function checkAndActivate() public
-function releasePendingRent() external
-function initiateTermination() external
-function finalizeTermination() external
-
-// View functions
-function landlord() external view returns (address)
-function tenant() external view returns (address)
-function monthlyAmount() external view returns (uint256)
-function totalMonths() external view returns (uint8)
-function state() external view returns (State)
-```
-
----
-
-## 🔐 Security
-
-### Audit Status
-
-⚠️ **Not audited** - This is a hackathon project. Do not use in production without proper security audit.
-
-### Security Features
-
-- ✅ **ReentrancyGuard** - Prevents reentrancy attacks
-- ✅ **SafeERC20** - Safe token transfers with proper error handling
-- ✅ **Hardcoded USDC** - Prevents malicious token swaps
-- ✅ **Immutable Implementation** - Factory implementation cannot be changed
-- ✅ **Input Validation** - All parameters validated before deployment
-
-### Known Limitations
-
-- **No emergency pause** - Once active, contract cannot be paused
-- **No dispute resolution** - Off-chain breaches cannot be handled on-chain
-- **30-day termination** - Minimum notice period enforced
-- **USDC only** - No support for other stablecoins or native ETH
-
----
-
-## 🛣️ Roadmap
-
-### Phase 2: Full R2F2C (AI-Generated FSM)
-- AI generates state machine as JSON
-- Backend validates for deadlocks
-- Factory deploys from template library based on FSM
-
-### Phase 3: Additional Templates
-- **Escrow** - Simple two-party with arbiter
-- **Payment Splitter** - Multi-party revenue share
-- **Bet/Wager** - Conditional payout based on oracle
-
-### Phase 4: Production Hardening
-- Account abstraction for single-signature flows
-- Gas sponsorship for better UX
-- Subgraph for efficient contract indexing
-- Multi-chain deployment (not just Base)
-
----
-
-## 🤝 Contributing
-
-This is a hackathon project. Contributions welcome after the competition!
-
----
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- [OpenZeppelin Contracts](https://www.openzeppelin.com/)
-- [Foundry](https://book.getfoundry.sh/)
-- [Next.js](https://nextjs.org/)
-- [RainbowKit](https://www.rainbowkit.com/)
-- [Vercel AI SDK](https://sdk.vercel.ai/)
-- [Gemini](https://ai.google.dev/)
-- [Base](https://base.org/)
-
----
-
-## 📞 Contact
-
-For questions or feedback, please open an issue on GitHub.
-
-**Built for ETH HackMoney 2026** 🚀
+**Website URL**: [https://civitas-fork.vercel.app/](https://civitas-fork.vercel.app/)
