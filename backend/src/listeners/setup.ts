@@ -1,5 +1,6 @@
 import { publicClient } from '@/config/blockchain'
 import { env } from '@/config/environment'
+import { getFactoryAddress } from '@/lib/contracts/constants'
 import { handleRentVaultCreated } from './handlers/rentVaultCreated'
 import { handleGroupBuyEscrowCreated } from './handlers/groupBuyEscrowCreated'
 import { handleTreasuryCreated } from './handlers/treasuryCreated'
@@ -13,6 +14,8 @@ const LOOKBACK_BLOCKS = 2n
  * Polls for all 3 creation events in a single loop.
  */
 async function startCivitasFactoryListener() {
+  const factoryAddress = getFactoryAddress(env.NETWORK_MODE)
+
   try {
     let lastProcessedBlock = await publicClient.getBlockNumber()
 
@@ -22,7 +25,8 @@ async function startCivitasFactoryListener() {
 
     logger.info('CivitasFactory event listener started (polling)', {
       fromBlock: lastProcessedBlock,
-      factoryAddress: env.CIVITAS_FACTORY_ADDRESS,
+      factoryAddress,
+      networkMode: env.NETWORK_MODE,
     })
 
     setInterval(async () => {
@@ -39,7 +43,7 @@ async function startCivitasFactoryListener() {
         // Fetch all 3 event types in parallel
         const [rvLogs, gbLogs, trLogs] = await Promise.all([
           publicClient.getLogs({
-            address: env.CIVITAS_FACTORY_ADDRESS,
+            address: factoryAddress,
             event: {
               type: 'event' as const,
               name: 'RentVaultCreated',
@@ -53,7 +57,7 @@ async function startCivitasFactoryListener() {
             toBlock,
           }),
           publicClient.getLogs({
-            address: env.CIVITAS_FACTORY_ADDRESS,
+            address: factoryAddress,
             event: {
               type: 'event' as const,
               name: 'GroupBuyEscrowCreated',
@@ -67,7 +71,7 @@ async function startCivitasFactoryListener() {
             toBlock,
           }),
           publicClient.getLogs({
-            address: env.CIVITAS_FACTORY_ADDRESS,
+            address: factoryAddress,
             event: {
               type: 'event' as const,
               name: 'TreasuryCreated',

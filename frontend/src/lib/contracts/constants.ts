@@ -21,22 +21,22 @@ export function getTargetChainId(networkMode: NetworkMode): number {
 // ============================================================================
 
 export const CIVITAS_FACTORY_ADDRESS: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x1cF969a2D882A09927f051D4F8e9e31160Abe894',
+  [baseSepolia.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56',
   [base.id]: '0xAF4D13Cac35b65d24203962fF22Dc281f1C1Fc5C', // Base Mainnet (deployed)
 };
 
 export const RENT_VAULT_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x9F88C58521693d0A02554C0b079aFf679DAB261E',
+  [baseSepolia.id]: '0x98EB94D9948c9CedeCeaB4e3E4aDEbb199F9faf7',
   [base.id]: '0x48F9b605171E2ce2E04739f3b3b3fae9716445C0', // Base Mainnet (deployed)
 };
 
 export const GROUP_BUY_ESCROW_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x7107651cD170931EA3caF552299CEA49D7EC7a6E',
+  [baseSepolia.id]: '0x43066b4557cCfa5a25f77f151a871Dd591C0f2F5',
   [base.id]: '0x8AFAA299F9CB43F64A2C2b5aa0acC1d92FfF3595', // Base Mainnet (deployed)
 };
 
 export const STABLE_ALLOWANCE_TREASURY_IMPL: Record<number, `0x${string}`> = {
-  [baseSepolia.id]: '0x1d71697D9420f218e75cC2ceb70C255BE1B62550',
+  [baseSepolia.id]: '0x86CCC5d79bF369FC38d2210138007b66D4Dd8433',
   [base.id]: '0x8eb38e1C054D212b153FC28Ae16595fabfe49174', // Base Mainnet (deployed)
 };
 
@@ -69,12 +69,12 @@ export type ContractTemplate = typeof CONTRACT_TEMPLATES[keyof typeof CONTRACT_T
 
 export const ENS_L2_RESOLVER: Record<number, `0x${string}`> = {
   [baseSepolia.id]: '0x6533C94869D28fAA8dF77cc63f9e2b2D6Cf77eBA',
-  [base.id]: '0x6533C94869D28fAA8dF77cc63f9e2b2D6Cf77eBA', // TODO: Update with mainnet resolver
+  [base.id]: '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD', // Base Mainnet L2 Resolver
 };
 
 export const CIVITAS_ENS_DOMAIN: Record<number, string> = {
   [baseSepolia.id]: 'civitas.basetest.eth',
-  [base.id]: 'civitas.base.eth', // TODO: Update when mainnet ENS is set up
+  [base.id]: 'civitas.base.eth',
 };
 
 export function getCivitasEnsDomain(chainId: number): string {

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { formatUnits } from 'viem';
 import { getUsdcAddress } from '@/lib/lifi/constants';
 import { AlertCircle } from 'lucide-react';
+import { getChainName } from '@/lib/contracts/template-utils';
 
 interface DirectFundingStepProps {
   destinationAddress: `0x${string}`;
@@ -28,10 +29,10 @@ const ERC20_TRANSFER_ABI = [
 ] as const;
 
 /**
- * Direct USDC transfer for TESTNET environments (Neobrutalist theme)
+ * Direct USDC transfer on Base (Neobrutalist theme)
  *
- * Since LI.FI doesn't support testnets, this component allows users
- * to directly transfer USDC from their wallet to the contract.
+ * Allows users to directly transfer USDC from their wallet to the contract.
+ * Works on both testnet and mainnet.
  */
 export function DirectFundingStep({
   destinationAddress,
@@ -113,7 +114,7 @@ export function DirectFundingStep({
       <div className="flex items-start gap-2 bg-gray-100 border-[2px] border-black p-3">
         <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         <p className="font-mono text-xs">
-          Make sure you have <span className="font-bold">{displayAmount} USDC</span> on Base Sepolia testnet
+          Make sure you have <span className="font-bold">{displayAmount} USDC</span> on {getChainName(chainId)}
         </p>
       </div>
     </div>

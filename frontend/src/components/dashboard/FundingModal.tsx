@@ -8,6 +8,7 @@ import { LiFiBridgeStep, DirectFundingStep, BalancePoller } from '@/components/d
 import ScanningAnimation, { type ScanProgress } from './ScanningAnimation';
 import RecommendedRouteCard from './RecommendedRouteCard';
 import AlternativesSection from './AlternativesSection';
+import FundingMethodSelector from './FundingMethodSelector';
 import { isLiFiSupported } from '@/lib/lifi';
 import { StatusBanner } from '@/components/ui/StatusBanner';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -24,6 +25,7 @@ interface FundingModalProps {
 
 type FundingFlowState =
   | 'idle'           // Waiting for valid amount input
+  | 'direct'         // Direct USDC transfer
   | 'scanning'       // AI analyzing wallet + routes
   | 'results'        // Display best route + alternatives
   | 'executing'      // LiFiBridgeStep executing
@@ -41,6 +43,7 @@ export default function FundingModal({
 }: FundingModalProps) {
   const { address: walletAddress } = useAccount();
   const [flowState, setFlowState] = useState<FundingFlowState>('idle');
+  const [fundingMethod, setFundingMethod] = useState<'direct' | 'crosschain' | null>(null);
   const [fundingError, setFundingError] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
   const debouncedAmount = useDebounce(customAmount, 800); // 800ms debounce
@@ -156,21 +159,15 @@ export default function FundingModal({
     }
   }, [debouncedAmount, requiredAmount, walletAddress, contractAddress, getAmount]);
 
-  // Auto-trigger scan when amount becomes valid on mainnet
-  useEffect(() => {
-    if (!isMainnet || !walletAddress) return;
-
-    const amount = getAmount(debouncedAmount);
-    if (amount <= 0) {
-      setFlowState('idle');
-      return;
-    }
-
-    // Auto-trigger scan when amount becomes valid
-    if (flowState === 'idle') {
+  const handleMethodSelect = (method: 'direct' | 'lifi') => {
+    if (method === 'direct') {
+      setFundingMethod('direct');
+      setFlowState('direct');
+    } else {
+      setFundingMethod('crosschain');
       handleScan();
     }
-  }, [debouncedAmount, isMainnet, walletAddress, flowState, getAmount, handleScan]);
+  };
 
   const handleUseRoute = () => {
     // Check if this is a direct transfer (USDC on Base)
@@ -213,12 +210,17 @@ export default function FundingModal({
 
   const handleError = (error: Error) => {
     setFundingError(error.message);
-    setFlowState('results'); // Go back to results so user can try different route
+    if (fundingMethod === 'direct') {
+      setFlowState('direct'); // Stay in direct state for retry
+    } else {
+      setFlowState('results'); // Go back to results so user can try different route
+    }
   };
 
   const handleClose = () => {
     // Reset state when closing
     setFlowState('idle');
+    setFundingMethod(null);
     setFundingError(null);
     setCustomAmount('');
     setAnalysisRoutes([]);
@@ -299,49 +301,40 @@ export default function FundingModal({
           )}
 
           {/* Flow States */}
-          {/* State: Idle */}
-          {flowState === 'idle' && (
-            <>
-              {!isMainnet && (
-                <div className="space-y-4">
-                  {/* Testnet Info Banner */}
-                  <div className="bg-[#FFD600] border-[3px] border-black shadow-[4px_4px_0px_#000] p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-black flex items-center justify-center">
-                        <span className="text-white !text-white font-black text-lg" style={{ color: 'white' }}>!</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-headline text-sm uppercase mb-2 font-bold">
-                          [TESTNET MODE]
-                        </p>
-                        <p className="font-mono text-xs mb-1">
-                          Cross-chain bridge unavailable on Base Sepolia
-                        </p>
-                        <p className="font-mono text-xs text-gray-700">
-                          → Switch to Base Mainnet for full LI.FI cross-chain funding
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+          {/* State: Idle - amount input (only when no requiredAmount) */}
+          {flowState === 'idle' && !isAmountValid && (
+            <StatusBanner variant="info">
+              Enter an amount to continue
+            </StatusBanner>
+          )}
 
-                  {/* Direct Transfer Button */}
-                  {isAmountValid && (
-                    <DirectFundingStep
-                      destinationAddress={contractAddress}
-                      amount={amount}
-                      chainId={chainId}
-                      onTransferCompleted={handleFundingCompleted}
-                      onError={handleError}
-                    />
-                  )}
-                </div>
-              )}
-              {isMainnet && !isAmountValid && (
-                <StatusBanner variant="info">
-                  Enter an amount to see AI-powered funding recommendations
-                </StatusBanner>
-              )}
-            </>
+          {/* Show method selector as soon as amount is valid (or requiredAmount provided) */}
+          {(flowState === 'idle' && isAmountValid) && (
+            <div className="space-y-4">
+              <FundingMethodSelector
+                onSelect={handleMethodSelect}
+                showLiFi={isMainnet}
+              />
+            </div>
+          )}
+
+          {/* State: Direct Transfer */}
+          {flowState === 'direct' && isAmountValid && (
+            <div className="space-y-4">
+              <DirectFundingStep
+                destinationAddress={contractAddress}
+                amount={amount}
+                chainId={chainId}
+                onTransferCompleted={handleFundingCompleted}
+                onError={handleError}
+              />
+              <button
+                onClick={() => { setFlowState('idle'); setFundingError(null); }}
+                className="block mx-auto font-mono text-xs text-gray-500 underline hover:text-black"
+              >
+                ← Back to funding methods
+              </button>
+            </div>
           )}
 
           {/* State: Scanning */}
@@ -411,7 +404,9 @@ export default function FundingModal({
             <div className="space-y-4">
               <h3 className="font-headline text-xl uppercase">Waiting for Funds</h3>
               <p className="font-display text-sm text-gray-600">
-                Bridge transaction submitted! Waiting for funds to arrive...
+                {fundingMethod === 'direct'
+                  ? 'Transfer submitted! Waiting for confirmation...'
+                  : 'Bridge transaction submitted! Waiting for funds to arrive...'}
               </p>
               <BalancePoller
                 contractAddress={contractAddress}
@@ -420,7 +415,9 @@ export default function FundingModal({
                 onFunded={handleBalanceConfirmed}
               />
               <p className="text-xs text-gray-500 text-center mt-4">
-                Cross-chain transfers typically take 1-5 minutes
+                {fundingMethod === 'direct'
+                  ? 'On-chain transfers typically confirm within a few seconds'
+                  : 'Cross-chain transfers typically take 1-5 minutes'}
               </p>
             </div>
           )}
