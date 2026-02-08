@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient, useSwitchChain } from 'wagmi';
+import { base, baseSepolia } from 'wagmi/chains';
+import { useNetworkMode } from '@/contexts/NetworkModeContext';
 import { CIVITAS_FACTORY_ADDRESS, CONTRACT_TEMPLATES, type ContractTemplate, getExplorerTxUrl } from '@/lib/contracts/constants';
 import { CIVITAS_FACTORY_ABI } from '@/lib/contracts/abis';
 import { decodeEventLog } from 'viem';
@@ -54,6 +56,9 @@ export type EnsStep = 'idle' | 'generating' | 'registering' | 'done' | 'skipped'
 export function useCivitasContractDeploy() {
   const { address } = useAccount();
   const chainId = useChainId();
+  const { networkMode } = useNetworkMode();
+  const { switchChainAsync } = useSwitchChain();
+  const targetChainId = networkMode === 'mainnet' ? base.id : baseSepolia.id;
   const publicClient = usePublicClient();
 
   // State declarations - MUST come before useEffect hooks that reference them
@@ -104,7 +109,7 @@ export function useCivitasContractDeploy() {
       console.log('========================================');
       console.log('Transaction Hash:', hash);
       console.log('Chain ID:', chainId);
-      console.log('BaseScan URL:', getExplorerTxUrl(chainId, hash));
+      console.log('BaseScan URL:', getExplorerTxUrl(targetChainId, hash));
       console.log('');
       console.log('🔍 IMMEDIATE CHECK:');
       console.log('   1. Open BaseScan URL above');
@@ -125,7 +130,7 @@ export function useCivitasContractDeploy() {
         console.log('💾 Persisted pending deployment to localStorage');
       }
     }
-  }, [hash, chainId, selectedTemplate, deploymentParams]);
+  }, [hash, targetChainId, selectedTemplate, deploymentParams]);
 
   useEffect(() => {
     if (isConfirming) {
@@ -153,9 +158,15 @@ export function useCivitasContractDeploy() {
       throw new Error('Wallet not connected');
     }
 
-    const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
+    const factoryAddress = CIVITAS_FACTORY_ADDRESS[targetChainId];
     if (!factoryAddress) {
       throw new Error('CivitasFactory not deployed on this network');
+    }
+
+    // Switch to the target chain if the wallet is on a different one
+    if (chainId !== targetChainId) {
+      console.log(`🔄 Switching wallet from chain ${chainId} to ${targetChainId}...`);
+      await switchChainAsync({ chainId: targetChainId });
     }
 
     // Reset state for new deployment
@@ -310,7 +321,7 @@ export function useCivitasContractDeploy() {
     params: DeploymentParams,
     config: Record<string, any>,
   ) => {
-    const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
+    const factoryAddress = CIVITAS_FACTORY_ADDRESS[targetChainId];
     if (!factoryAddress || !address) {
       setEnsStep('skipped');
       return;
@@ -369,7 +380,7 @@ export function useCivitasContractDeploy() {
       setEnsError(error.message || 'Failed to register ENS name');
       setEnsStep('skipped');
     }
-  }, [chainId, address, customBasename, buildENSRecords, writeEnsContract]);
+  }, [targetChainId, address, customBasename, buildENSRecords, writeEnsContract]);
 
   /**
    * Handle ENS transaction confirmation
@@ -379,7 +390,7 @@ export function useCivitasContractDeploy() {
 
     // Parse the ENSRecordsSet event to get the full basename
     let fullBasename: string | null = null;
-    const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
+    const factoryAddress = CIVITAS_FACTORY_ADDRESS[targetChainId];
 
     for (const log of ensReceipt.logs) {
       try {
@@ -427,7 +438,7 @@ export function useCivitasContractDeploy() {
       setEnsStep('done');
       console.warn('⚠️ ENS tx confirmed but could not parse event for full basename');
     }
-  }, [isEnsSuccess, ensReceipt, deployedAddress, chainId]);
+  }, [isEnsSuccess, ensReceipt, deployedAddress, targetChainId]);
 
   /**
    * Handle ENS write/confirm errors (non-blocking)
@@ -491,7 +502,7 @@ export function useCivitasContractDeploy() {
               console.log('🔄 Trying getLogs with block range...');
               const startBlock = receipt.blockNumber - 1n > 0n ? receipt.blockNumber - 1n : receipt.blockNumber;
               const fetchedLogs = await publicClient.getLogs({
-                address: CIVITAS_FACTORY_ADDRESS[chainId],
+                address: CIVITAS_FACTORY_ADDRESS[targetChainId],
                 fromBlock: startBlock,
                 toBlock: receipt.blockNumber + 1n,
               });
@@ -513,7 +524,7 @@ export function useCivitasContractDeploy() {
         for (const log of logsToProcess) {
           try {
             // Only try to decode logs from the factory address
-            const factoryAddress = CIVITAS_FACTORY_ADDRESS[chainId];
+            const factoryAddress = CIVITAS_FACTORY_ADDRESS[targetChainId];
             if (log.address.toLowerCase() !== factoryAddress?.toLowerCase()) {
               continue; // Skip logs from other contracts
             }
@@ -545,7 +556,7 @@ export function useCivitasContractDeploy() {
         if (!contractAddress) {
           console.error('❌ Could not find contract address in logs');
           console.log('📋 All logs:', logsToProcess);
-          console.log('🏭 Looking for events from factory:', CIVITAS_FACTORY_ADDRESS[chainId]);
+          console.log('🏭 Looking for events from factory:', CIVITAS_FACTORY_ADDRESS[targetChainId]);
 
           // Log all log addresses to help debug
           console.log('📍 Log addresses:', logsToProcess.map(l => l.address));
@@ -602,7 +613,7 @@ export function useCivitasContractDeploy() {
             contract_address: contractAddress,
             template_id: selectedTemplate,
             creator_address: address,
-            chain_id: chainId,
+            chain_id: targetChainId,
             state: 0, // Deployed state
             basename: null, // Will be set after ENS registration
             config,
@@ -646,7 +657,7 @@ export function useCivitasContractDeploy() {
     };
 
     storeContract();
-  }, [isSuccess, receipt, selectedTemplate, address, hash, isStoring, deploymentParams, chainId, hasStored, registerENS]);
+  }, [isSuccess, receipt, selectedTemplate, address, hash, isStoring, deploymentParams, targetChainId, hasStored, registerENS]);
 
   return {
     deployContract,

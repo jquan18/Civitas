@@ -213,11 +213,14 @@ export function LiFiBridgeStep({
 
         // Detect gas balance errors and provide clear message
         let errorMessage = err.message || 'Bridge execution failed';
-        if (err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('BalanceError') || err.message?.includes('fee cap') || err.message?.includes('maxFeePerGas')) {
-          const chainInfo = sourceChains.find(c => c.id === fromChainId);
-          const nativeToken = chainInfo?.nativeToken || 'ETH';
-          const chainName = chainInfo?.name || 'source chain';
+        const chainInfo = sourceChains.find(c => c.id === fromChainId);
+        const nativeToken = chainInfo?.nativeToken || 'ETH';
+        const chainName = chainInfo?.name || 'source chain';
+
+        if (err.message?.includes('fee cap') || err.message?.includes('maxFeePerGas') || err.message?.includes('baseFee')) {
           errorMessage = `Gas fee estimation issue on ${chainName}. This can happen when gas prices change rapidly. Please try again.`;
+        } else if (err.message?.includes('BalanceError') || err.message?.includes('balance is too low') || err.message?.includes('insufficient funds') || err.message?.includes('exceeds balance')) {
+          errorMessage = `Insufficient balance on ${chainName}. Make sure you have enough ${fromTokenSymbol} to bridge and enough ${nativeToken} for gas fees.`;
         }
 
         setError(errorMessage);
@@ -234,30 +237,38 @@ export function LiFiBridgeStep({
     configureLiFiSDK(wagmiConfig);
   }, [wagmiConfig]);
 
-  // Fix for L2 gas estimation: the LI.FI SDK intentionally leaves maxFeePerGas undefined,
-  // letting the wallet estimate it. Some wallets (e.g. Coinbase Wallet) estimate too tightly
-  // on Arbitrum, causing "maxFeePerGas less than baseFee" errors. We fetch the current base
-  // fee and set maxFeePerGas explicitly with a 50% buffer so the wallet doesn't underestimate.
+  // Fix for L2 gas estimation: Coinbase Wallet overrides EIP-1559 maxFeePerGas with its own
+  // estimate that's too tight for L2s like Arbitrum. Workaround: use gasPrice (legacy tx type)
+  // for L2 chains. Wallets don't re-estimate legacy transactions. On L2s this costs essentially
+  // the same since gas prices are < 0.1 gwei.
+  const L2_CHAIN_IDS = [42161, 10, 8453, 137]; // Arbitrum, Optimism, Base, Polygon
+
   const applyGasBuffer = async (txRequest: TransactionRequestParameters) => {
     const updated = { ...txRequest };
 
-    if (!updated.maxFeePerGas && updated.chainId) {
+    if (updated.chainId) {
       try {
         const publicClient = getPublicClient(wagmiConfig, { chainId: updated.chainId });
         if (publicClient) {
           const block = await publicClient.getBlock();
           if (block?.baseFeePerGas) {
-            updated.maxFeePerGas = (block.baseFeePerGas * 150n) / 100n;
-            if (!updated.maxPriorityFeePerGas) {
-              updated.maxPriorityFeePerGas = 0n;
+            if (L2_CHAIN_IDS.includes(updated.chainId)) {
+              // L2: use gasPrice to force legacy tx (wallets don't override these)
+              updated.gasPrice = (block.baseFeePerGas * 200n) / 100n;
+              updated.maxFeePerGas = undefined;
+              updated.maxPriorityFeePerGas = undefined;
+            } else {
+              // L1: use EIP-1559 with buffer
+              updated.maxFeePerGas = (block.baseFeePerGas * 200n) / 100n;
+              if (!updated.maxPriorityFeePerGas) {
+                updated.maxPriorityFeePerGas = 1_000_000_000n; // 1 gwei
+              }
             }
           }
         }
       } catch (e) {
         console.warn('[LiFiBridge] Failed to fetch base fee for gas buffer:', e);
       }
-    } else if (updated.maxFeePerGas) {
-      updated.maxFeePerGas = (updated.maxFeePerGas * 150n) / 100n;
     }
 
     return updated;

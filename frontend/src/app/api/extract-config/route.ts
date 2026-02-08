@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     const google = getGoogleProvider();
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-3-flash-preview'),
       schema,
       prompt: `${extractionPrompt}\n\nConversation:\n${JSON.stringify(messages)}`,
     });

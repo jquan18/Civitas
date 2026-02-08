@@ -46,7 +46,7 @@ export default function CommandZone({
     <div className="w-full md:w-[45%] flex flex-col h-full bg-stark-white border-r-4 border-black">
       {/* Header */}
       <div className="p-4 border-b-4 border-black bg-stark-white flex justify-between items-center shrink-0">
-        <h2 className="font-headline text-2xl uppercase tracking-tighter">Command Zone</h2>
+        <h2 className="font-headline text-2xl uppercase tracking-tighter">Contracts Zone</h2>
         <div className="flex gap-2 items-center">
           <span className="text-xs font-display font-bold bg-acid-lime text-void-black px-2 py-1 border-2 border-black shadow-[2px_2px_0px_#000]">
             {totalContracts} CONTRACT{totalContracts !== 1 ? 'S' : ''}

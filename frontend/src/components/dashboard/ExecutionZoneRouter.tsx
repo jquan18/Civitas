@@ -59,7 +59,7 @@ export default function ExecutionZoneRouter({ contract, onSync }: ExecutionZoneR
           <div className="bg-stark-white border-4 border-black shadow-[8px_8px_0px_#000] p-8 text-center">
             <h3 className="font-headline text-xl uppercase mb-2">Legacy Rental Contract</h3>
             <p className="font-display text-sm text-gray-600">
-              This is a legacy rental contract. View details in the command zone.
+              This is a legacy rental contract. View details in the contract zone.
             </p>
           </div>
         </div>

@@ -1,18 +1,38 @@
 import { base, baseSepolia } from 'viem/chains';
+import type { NetworkMode } from '@/config/environment';
 
 // Chain configuration
 export const SUPPORTED_CHAINS = [base, baseSepolia] as const;
 
-export const DEFAULT_CHAIN = base;
-
-// Base USDC address (same across mainnet and testnet)
-export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const;
+// Base USDC addresses
+export const USDC_ADDRESS: Record<number, `0x${string}`> = {
+  [base.id]: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  [baseSepolia.id]: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+};
 
 export const USDC_DECIMALS = 6;
 
-// CivitasFactory (multi-template)
-export const CIVITAS_FACTORY_ADDRESS = (process.env.CIVITAS_FACTORY_ADDRESS ||
-  '0x0000000000000000000000000000000000000000') as `0x${string}`;
+// CivitasFactory addresses (chain-ID-based, matching frontend pattern)
+export const CIVITAS_FACTORY_ADDRESS: Record<number, `0x${string}`> = {
+  [baseSepolia.id]: '0xa44EbCC68383fc6761292A4D5Ec13127Cc123B56',
+  [base.id]: '0xAF4D13Cac35b65d24203962fF22Dc281f1C1Fc5C',
+};
+
+// Helper to get factory address based on network mode
+export function getFactoryAddress(networkMode: NetworkMode): `0x${string}` {
+  const chainId = networkMode === 'mainnet' ? base.id : baseSepolia.id;
+  return CIVITAS_FACTORY_ADDRESS[chainId];
+}
+
+// Helper to get chain ID based on network mode
+export function getChainId(networkMode: NetworkMode): number {
+  return networkMode === 'mainnet' ? base.id : baseSepolia.id;
+}
+
+// Helper to get chain based on network mode
+export function getChain(networkMode: NetworkMode) {
+  return networkMode === 'mainnet' ? base : baseSepolia;
+}
 
 // Time constants
 export const MONTH_DURATION = 30 * 24 * 60 * 60; // 30 days in seconds
@@ -23,7 +43,7 @@ export const TERMINATION_NOTICE_PERIOD = 30 * 24 * 60 * 60; // 30 days in second
 export const CHAIN_CONFIG = {
   [base.id]: {
     name: 'Base',
-    rpcUrl: process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org',
+    rpcUrl: 'https://mainnet.base.org',
     blockExplorer: 'https://basescan.org',
   },
   [baseSepolia.id]: {
